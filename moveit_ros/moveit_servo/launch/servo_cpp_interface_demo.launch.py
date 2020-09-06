@@ -73,6 +73,7 @@ def generate_launch_description():
     fake_joint_driver_node = Node(package='fake_joint_driver',
                                   executable='fake_joint_driver_node',
                                   parameters=[{'controller_name': 'fake_joint_trajectory_controller'},
+                                              {'controller_type': 'joint_trajectory_controller/JointTrajectoryController'},
                                               os.path.join(get_package_share_directory("moveit_servo"), "config", "panda_controllers.yaml"),
                                               os.path.join(get_package_share_directory("moveit_servo"), "config", "start_positions.yaml"),
                                               robot_description])

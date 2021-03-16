@@ -350,5 +350,7 @@ protected:
   // dynamic parameters
   std::string robot_link_command_frame_;
   rcl_interfaces::msg::SetParametersResult robotLinkCommandFrameCallback(const rclcpp::Parameter& parameter);
+  // Use Reflexxes for command smoothing
+  ReflexxesAPI *reflexxes_ptr_;
 };
 }  // namespace moveit_servo

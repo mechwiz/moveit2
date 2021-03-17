@@ -45,6 +45,7 @@
 
 // Reflexxes, for smoothing
 #include <libreflexxestype2/ReflexxesAPI.h>
+#include <reflexxes_wrapper/reflexxes_wrapper.h>
 
 // ROS
 #include <rclcpp/rclcpp.hpp>
@@ -351,6 +352,8 @@ protected:
   std::string robot_link_command_frame_;
   rcl_interfaces::msg::SetParametersResult robotLinkCommandFrameCallback(const rclcpp::Parameter& parameter);
   // Use Reflexxes for command smoothing
-  ReflexxesAPI *reflexxes_ptr_;
+  std::unique_ptr<ReflexxesAPI> reflexxes_;
+  std::unique_ptr<RMLPositionInputParameters> reflexxes_position_input_param_;
+  std::unique_ptr<RMLPositionOutputParameters> reflexxes_position_output_param_;
 };
 }  // namespace moveit_servo

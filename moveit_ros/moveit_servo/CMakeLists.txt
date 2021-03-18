@@ -84,7 +84,6 @@ add_library(${SERVO_LIB_NAME} SHARED
   src/servo.cpp
   src/servo_calcs.cpp
   src/collision_check.cpp
-  src/low_pass_filter.cpp
 )
 set_target_properties(${SERVO_LIB_NAME} PROPERTIES VERSION "${${PROJECT_NAME}_VERSION}")
 ament_target_dependencies(${SERVO_LIB_NAME} ${THIS_PACKAGE_INCLUDE_DEPENDS})
@@ -188,21 +187,6 @@ if(BUILD_TESTING)
 
   # Run all lint tests in package.xml except those listed above
   ament_lint_auto_find_test_dependencies()
-
-  # Lowpass filter unit test
-  ament_add_gtest(test_low_pass_filter test/test_low_pass_filter.cpp)
-  target_link_libraries(test_low_pass_filter ${SERVO_LIB_NAME})
-
-  # This test is flaky, disabling until it is fixed
-  # Unit test for ServoCalcs
-  # ament_add_gtest_executable(
-  #   unit_test_servo_calcs
-  #   test/unit_test_servo_calcs.cpp
-  # )
-  # target_link_libraries(unit_test_servo_calcs ${SERVO_LIB_NAME})
-  # ament_target_dependencies(unit_test_servo_calcs ${THIS_PACKAGE_INCLUDE_DEPENDS} Boost)
-  # add_ros_test(test/launch/unit_test_servo_calcs.test.py ARGS "test_binary_dir:=${CMAKE_CURRENT_BINARY_DIR}")
-  # end Unit test for ServoCalcs
 
   # Servo integration launch test
   ament_add_gtest_executable(test_servo_integration

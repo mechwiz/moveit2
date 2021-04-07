@@ -347,8 +347,8 @@ protected:
   rcl_interfaces::msg::SetParametersResult robotLinkCommandFrameCallback(const rclcpp::Parameter& parameter);
   // Use Reflexxes for command smoothing
   std::unique_ptr<ReflexxesAPI> reflexxes_;
-  std::unique_ptr<RMLPositionInputParameters> reflexxes_position_input_param_;
-  std::shared_ptr<RMLPositionOutputParameters> reflexxes_position_output_param_;
-  RMLPositionFlags reflexxes_flags_;
+  std::unique_ptr<RMLVelocityInputParameters> reflexxes_velocity_input_param_;
+  std::shared_ptr<RMLVelocityOutputParameters> reflexxes_velocity_output_param_;
+  RMLVelocityFlags reflexxes_flags_;
 };
 }  // namespace moveit_servo

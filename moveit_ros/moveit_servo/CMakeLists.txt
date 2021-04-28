@@ -201,33 +201,36 @@ if(BUILD_TESTING)
   # end Unit test for ServoCalcs
 
   # Servo integration launch test
-  ament_add_gtest_executable(test_servo_integration
-      test/test_servo_interface.cpp
-      test/servo_launch_test_common.hpp
-  )
-  target_link_libraries(test_servo_integration ${SERVO_PARAM_LIB_NAME})
-  ament_target_dependencies(test_servo_integration ${THIS_PACKAGE_INCLUDE_DEPENDS})
-  add_ros_test(test/launch/test_servo_integration.test.py ARGS "test_binary_dir:=${CMAKE_CURRENT_BINARY_DIR}")
+  # Flaky, disabling until it is fixed
+  # ament_add_gtest_executable(test_servo_integration
+  #     test/test_servo_interface.cpp
+  #     test/servo_launch_test_common.hpp
+  # )
+  # target_link_libraries(test_servo_integration ${SERVO_PARAM_LIB_NAME})
+  # ament_target_dependencies(test_servo_integration ${THIS_PACKAGE_INCLUDE_DEPENDS})
+  # add_ros_test(test/launch/test_servo_integration.test.py ARGS "test_binary_dir:=${CMAKE_CURRENT_BINARY_DIR}")
   # end servo integration launch test
 
+  # Flaky, disabling until it is fixed
   # Servo collision checking integration test
-  ament_add_gtest_executable(test_servo_collision
-        test/test_servo_collision.cpp
-        test/servo_launch_test_common.hpp
-  )
-  target_link_libraries(test_servo_collision ${SERVO_PARAM_LIB_NAME})
-  ament_target_dependencies(test_servo_collision ${THIS_PACKAGE_INCLUDE_DEPENDS})
-  add_ros_test(test/launch/test_servo_collision.test.py ARGS "test_binary_dir:=${CMAKE_CURRENT_BINARY_DIR}")
+  # ament_add_gtest_executable(test_servo_collision
+  #       test/test_servo_collision.cpp
+  #       test/servo_launch_test_common.hpp
+  # )
+  # target_link_libraries(test_servo_collision ${SERVO_PARAM_LIB_NAME})
+  # ament_target_dependencies(test_servo_collision ${THIS_PACKAGE_INCLUDE_DEPENDS})
+  # add_ros_test(test/launch/test_servo_collision.test.py ARGS "test_binary_dir:=${CMAKE_CURRENT_BINARY_DIR}")
   # end servo collision checking integration test
 
+  # Flaky, disabling until it is fixed
   # Servo singularity checking integration test
-  ament_add_gtest_executable(test_servo_singularity
-        test/test_servo_singularity.cpp
-        test/servo_launch_test_common.hpp
-  )
-  target_link_libraries(test_servo_singularity ${SERVO_PARAM_LIB_NAME})
-  ament_target_dependencies(test_servo_singularity ${THIS_PACKAGE_INCLUDE_DEPENDS})
-  add_ros_test(test/launch/test_servo_singularity.test.py ARGS "test_binary_dir:=${CMAKE_CURRENT_BINARY_DIR}")
+  # ament_add_gtest_executable(test_servo_singularity
+  #       test/test_servo_singularity.cpp
+  #       test/servo_launch_test_common.hpp
+  # )
+  # target_link_libraries(test_servo_singularity ${SERVO_PARAM_LIB_NAME})
+  # ament_target_dependencies(test_servo_singularity ${THIS_PACKAGE_INCLUDE_DEPENDS})
+  # add_ros_test(test/launch/test_servo_singularity.test.py ARGS "test_binary_dir:=${CMAKE_CURRENT_BINARY_DIR}")
   # end servo singularity checking integration test
 
   # TODO(henningkayser): Port tests to ROS2
@@ -241,7 +244,6 @@ if(BUILD_TESTING)
   #   ${catkin_LIBRARIES}
   # )
 
-  # Flaky, disabling until it is fixed
   # pose_tracking
   ament_add_gtest_executable(test_servo_pose_tracking
         test/pose_tracking_test.cpp
@@ -250,15 +252,14 @@ if(BUILD_TESTING)
   target_link_libraries(test_servo_pose_tracking ${POSE_TRACKING})
   add_ros_test(test/launch/test_servo_pose_tracking.test.py ARGS "test_binary_dir:=${CMAKE_CURRENT_BINARY_DIR}")
 
-  # # low_latency
-  # add_rostest_gtest(servo_low_latency_test
-  # test/servo_low_latency_test.test
-  # test/servo_low_latency_test.cpp
+  # basic_servo_tests
+  # Flaky, disabling until it is fixed
+  # ament_add_gtest_executable(basic_servo_tests
+  #       test/basic_servo_tests.cpp
   # )
-  # target_link_libraries(servo_low_latency_test
-  # ${SERVO_LIB_NAME}
-  # ${catkin_LIBRARIES}
-  # )
+  # ament_target_dependencies(basic_servo_tests ${THIS_PACKAGE_INCLUDE_DEPENDS})
+  # target_link_libraries(basic_servo_tests ${POSE_TRACKING})
+  # add_ros_test(test/launch/test_basic_servo.test.py ARGS "test_binary_dir:=${CMAKE_CURRENT_BINARY_DIR}")
 
 endif()
 

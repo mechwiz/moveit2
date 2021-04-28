@@ -345,7 +345,7 @@ TEST_F(ServoCalcsTestFixture, TestEnforcePosLimits)
 TEST_F(ServoCalcsTestFixture, TestEnforceVelLimits)
 {
   // First, define the velocity limits (from panda URDF)
-  std::vector<double> vel_limits{ 2.3925, 2.3925, 2.3925, 2.3925, 2.8710, 2.8710, 2.8710 };
+  std::vector<double> vel_limits{ 2.610, 2.610, 2.610, 2.610, 2.610, 2.610, 2.610 };
 
   // Lets test the Velocity limits first
   // Set prev_joint_velocity_ == desired_velocity, both above the limits

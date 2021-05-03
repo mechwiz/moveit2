@@ -158,7 +158,7 @@ protected:
   bool enforceVelAccelLimitsWithReflexxes(Eigen::ArrayXd& delta_theta);
 
   /** \brief Avoid overshooting joint limits */
-  bool enforcePositionLimits();
+  bool enforcePositionLimits(trajectory_msgs::msg::JointTrajectory& joint_trajectory) const;
 
   /** \brief Possibly calculate a velocity scaling factor, due to proximity of
    * singularity and direction of motion

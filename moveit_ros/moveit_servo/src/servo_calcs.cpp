@@ -864,13 +864,10 @@ bool ServoCalcs::enforcePositionLimits(trajectory_msgs::msg::JointTrajectory& jo
       // Joint limits are not defined for some joints. Skip them.
       if (!limits.empty())
       {
-        // Check if pending velocity command is moving past the joint limit
-        size_t joint_idx = 0;
-        for (size_t i = 0; i < joint_trajectory.joint_names.size(); ++i)
-        {
-          if (joint->getName() == joint_trajectory.joint_names[i])
-            joint_idx = i;
-        }
+        // Check if pending velocity command is moving in the right direction
+        auto joint_itr =
+            std::find(joint_trajectory.joint_names.begin(), joint_trajectory.joint_names.end(), joint->getName());
+        auto joint_idx = std::distance(joint_trajectory.joint_names.begin(), joint_itr);
 
         if ((joint_trajectory.points[0].velocities[joint_idx] < 0 &&
              (joint_angle < (limits[0].min_position + parameters_->joint_limit_margin))) ||
@@ -882,7 +879,7 @@ bool ServoCalcs::enforcePositionLimits(trajectory_msgs::msg::JointTrajectory& jo
                                       node_->get_name()
                                           << " " << joint->getName() << " close to a position limit. Halting.");
           halting = true;
-          RCLCPP_ERROR_STREAM(LOGGER, "HALTING!");
+          break;
         }
       }
     }

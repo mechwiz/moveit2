@@ -189,14 +189,15 @@ if(BUILD_TESTING)
   ament_add_gtest(test_low_pass_filter test/test_low_pass_filter.cpp)
   target_link_libraries(test_low_pass_filter ${SERVO_LIB_NAME})
 
+  # Disabling flaky test
   # Unit test for ServoCalcs
-  ament_add_gtest_executable(
-    unit_test_servo_calcs
-    test/unit_test_servo_calcs.cpp
-  )
-  target_link_libraries(unit_test_servo_calcs ${SERVO_LIB_NAME})
-  ament_target_dependencies(unit_test_servo_calcs ${THIS_PACKAGE_INCLUDE_DEPENDS} Boost)
-  add_ros_test(test/launch/unit_test_servo_calcs.test.py ARGS "test_binary_dir:=${CMAKE_CURRENT_BINARY_DIR}")
+  # ament_add_gtest_executable(
+  #   unit_test_servo_calcs
+  #   test/unit_test_servo_calcs.cpp
+  # )
+  # target_link_libraries(unit_test_servo_calcs ${SERVO_LIB_NAME})
+  # ament_target_dependencies(unit_test_servo_calcs ${THIS_PACKAGE_INCLUDE_DEPENDS} Boost)
+  # add_ros_test(test/launch/unit_test_servo_calcs.test.py ARGS "test_binary_dir:=${CMAKE_CURRENT_BINARY_DIR}")
 
   # Servo integration launch test
   ament_add_gtest_executable(test_servo_integration

@@ -225,17 +225,6 @@ if(BUILD_TESTING)
   ament_target_dependencies(test_servo_singularity ${THIS_PACKAGE_INCLUDE_DEPENDS})
   add_ros_test(test/launch/test_servo_singularity.test.py ARGS "test_binary_dir:=${CMAKE_CURRENT_BINARY_DIR}")
 
-  # TODO(henningkayser): Port tests to ROS2
-  # servo_cpp_interface
-  # add_rostest_gtest(servo_cpp_interface_test
-  #   test/servo_cpp_interface_test.test
-  #   test/servo_cpp_interface_test.cpp
-  # )
-  # target_link_libraries(servo_cpp_interface_test
-  #   ${SERVO_LIB_NAME}
-  #   ${catkin_LIBRARIES}
-  # )
-
   # pose_tracking
   ament_add_gtest_executable(test_servo_pose_tracking
         test/pose_tracking_test.cpp

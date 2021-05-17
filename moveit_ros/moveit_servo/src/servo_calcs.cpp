@@ -141,6 +141,8 @@ ServoCalcs::ServoCalcs(rclcpp::Node::SharedPtr node,
   // Publish to collision_check for worst stop time
   worst_case_stop_time_pub_ = node_->create_publisher<std_msgs::msg::Float64>("~/worst_case_stop_time", ROS_QUEUE_SIZE);
 
+  desired_cartesian_point_pub_ = node_->create_publisher<geometry_msgs::msg::PointStamped>("~/servo_desired_point", ROS_QUEUE_SIZE);
+
   // Publish freshly-calculated joints to the robot.
   // Put the outgoing msg in the right format (trajectory_msgs/JointTrajectory or std_msgs/Float64MultiArray).
   if (parameters_->command_out_type == "trajectory_msgs/JointTrajectory")
@@ -506,6 +508,18 @@ bool ServoCalcs::cartesianServoCalcs(geometry_msgs::msg::TwistStamped& cmd,
   // Check for nan's in the incoming command
   if (!checkValidCommand(cmd))
     return false;
+
+  // For testing of other nodes, publish the desired Cartesian position
+  geometry_msgs::msg::PointStamped desired_point;
+  desired_point.point.x = tf_moveit_to_ee_frame_.translation().x();
+  desired_point.point.y = tf_moveit_to_ee_frame_.translation().y();
+  desired_point.point.z = tf_moveit_to_ee_frame_.translation().z();
+  desired_point.header.stamp = node_->now();
+  desired_point.header.frame_id = parameters_->planning_frame;
+  desired_point.point.x += cmd.twist.linear.x * parameters_->publish_period;
+  desired_point.point.y += cmd.twist.linear.y * parameters_->publish_period;
+  desired_point.point.z += cmd.twist.linear.z * parameters_->publish_period;
+  desired_cartesian_point_pub_->publish(desired_point);
 
   // Set uncontrolled dimensions to 0 in command frame
   enforceControlDimensions(cmd);

@@ -509,18 +509,6 @@ bool ServoCalcs::cartesianServoCalcs(geometry_msgs::msg::TwistStamped& cmd,
   if (!checkValidCommand(cmd))
     return false;
 
-  // For testing of other nodes, publish the desired Cartesian position
-  geometry_msgs::msg::PointStamped desired_point;
-  desired_point.point.x = tf_moveit_to_ee_frame_.translation().x();
-  desired_point.point.y = tf_moveit_to_ee_frame_.translation().y();
-  desired_point.point.z = tf_moveit_to_ee_frame_.translation().z();
-  desired_point.header.stamp = node_->now();
-  desired_point.header.frame_id = parameters_->planning_frame;
-  desired_point.point.x += cmd.twist.linear.x * parameters_->publish_period;
-  desired_point.point.y += cmd.twist.linear.y * parameters_->publish_period;
-  desired_point.point.z += cmd.twist.linear.z * parameters_->publish_period;
-  desired_cartesian_point_pub_->publish(desired_point);
-
   // Set uncontrolled dimensions to 0 in command frame
   enforceControlDimensions(cmd);
 
@@ -563,6 +551,18 @@ bool ServoCalcs::cartesianServoCalcs(geometry_msgs::msg::TwistStamped& cmd,
     cmd.twist.angular.y = angular_vector(1);
     cmd.twist.angular.z = angular_vector(2);
   }
+
+  // For testing of other nodes, publish the desired Cartesian position
+  geometry_msgs::msg::PointStamped desired_point;
+  desired_point.point.x = tf_moveit_to_ee_frame_.translation().x();
+  desired_point.point.y = tf_moveit_to_ee_frame_.translation().y();
+  desired_point.point.z = tf_moveit_to_ee_frame_.translation().z();
+  desired_point.header.stamp = node_->now();
+  desired_point.header.frame_id = parameters_->planning_frame;
+  desired_point.point.x += cmd.twist.linear.x * parameters_->publish_period;
+  desired_point.point.y += cmd.twist.linear.y * parameters_->publish_period;
+  desired_point.point.z += cmd.twist.linear.z * parameters_->publish_period;
+  desired_cartesian_point_pub_->publish(desired_point);
 
   Eigen::VectorXd delta_x = scaleCartesianCommand(cmd);
 

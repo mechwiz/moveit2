@@ -190,21 +190,16 @@ void ServoCalcs::start()
   initial_joint_trajectory->joint_names = internal_joint_state_.name;
   trajectory_msgs::msg::JointTrajectoryPoint point;
   point.time_from_start = rclcpp::Duration::from_seconds(parameters_->publish_period);
-  if (parameters_->publish_joint_positions)
-    planning_scene_monitor_->getStateMonitor()->getCurrentState()->copyJointGroupPositions(joint_model_group_,
-                                                                                           point.positions);
-  if (parameters_->publish_joint_velocities)
-  {
-    std::vector<double> velocity(num_joints_);
-    point.velocities = velocity;
-  }
-  if (parameters_->publish_joint_accelerations)
-  {
-    // I do not know of a robot that takes acceleration commands.
-    // However, some controllers check that this data is non-empty.
-    // Send all zeros, for now.
-    point.accelerations.resize(num_joints_);
-  }
+
+  planning_scene_monitor_->getStateMonitor()->getCurrentState()->copyJointGroupPositions(joint_model_group_,
+                                                                                         point.positions);
+  std::vector<double> velocity(num_joints_);
+  point.velocities = velocity;
+  // I do not know of a robot that takes acceleration commands.
+  // However, some controllers check that this data is non-empty.
+  // Send all zeros, for now.
+  point.accelerations.resize(num_joints_);
+
   initial_joint_trajectory->points.push_back(point);
   last_sent_command_ = std::move(initial_joint_trajectory);
 
@@ -432,17 +427,30 @@ void ServoCalcs::calculateSingleIteration()
     {
       // When a joint_trajectory_controller receives a new command, a stamp of 0 indicates "begin immediately"
       // See http://wiki.ros.org/joint_trajectory_controller#Trajectory_replacement
-      joint_trajectory->header.stamp = rclcpp::Time(0);
       *last_sent_command_ = *joint_trajectory;
-      trajectory_outgoing_cmd_pub_->publish(std::move(joint_trajectory));
+
+      auto outgoing_trajectory = std::make_unique<trajectory_msgs::msg::JointTrajectory>();
+      outgoing_trajectory->header.stamp = rclcpp::Time(0);
+      outgoing_trajectory->points.push_back(trajectory_msgs::msg::JointTrajectoryPoint());
+      // To save bandwidth, may publish only positions or velocities
+      if (parameters_->publish_joint_positions)
+      {
+        outgoing_trajectory->points.at(0).positions = joint_trajectory->points.at(0).positions;
+      }
+      if (parameters_->publish_joint_velocities && !joint_trajectory->points.empty())
+      {
+        outgoing_trajectory->points.at(0).velocities = joint_trajectory->points.at(0).velocities;
+      }
+      outgoing_trajectory->joint_names = joint_trajectory->joint_names;
+      trajectory_outgoing_cmd_pub_->publish(std::move(outgoing_trajectory));
     }
     else if (parameters_->command_out_type == "std_msgs/Float64MultiArray")
     {
       auto joints = std::make_unique<std_msgs::msg::Float64MultiArray>();
       if (parameters_->publish_joint_positions && !joint_trajectory->points.empty())
-        joints->data = joint_trajectory->points[0].positions;
+        joints->data = joint_trajectory->points.at(0).positions;
       else if (parameters_->publish_joint_velocities && !joint_trajectory->points.empty())
-        joints->data = joint_trajectory->points[0].velocities;
+        joints->data = joint_trajectory->points.at(0).velocities;
       *last_sent_command_ = *joint_trajectory;
       multiarray_outgoing_cmd_pub_->publish(std::move(joints));
     }
@@ -638,7 +646,7 @@ void ServoCalcs::insertRedundantPointsIntoTrajectory(trajectory_msgs::msg::Joint
   if (count < 2)
     return;
   joint_trajectory.points.resize(count);
-  auto point = joint_trajectory.points[0];
+  auto point = joint_trajectory.points.at(0);
   // Start from 1 because we already have the first point. End at count+1 so (total #) == count
   for (int i = 1; i < count; ++i)
   {
@@ -668,18 +676,15 @@ void ServoCalcs::composeJointTrajMessage(const sensor_msgs::msg::JointState& joi
 
   trajectory_msgs::msg::JointTrajectoryPoint point;
   point.time_from_start = rclcpp::Duration::from_seconds(parameters_->publish_period);
-  if (parameters_->publish_joint_positions)
-    point.positions = joint_state.position;
-  if (parameters_->publish_joint_velocities)
-    point.velocities = joint_state.velocity;
-  if (parameters_->publish_joint_accelerations)
-  {
-    // I do not know of a robot that takes acceleration commands.
-    // However, some controllers check that this data is non-empty.
-    // Send all zeros, for now.
-    std::vector<double> acceleration(num_joints_);
-    point.accelerations = acceleration;
-  }
+
+  point.positions = joint_state.position;
+  point.velocities = joint_state.velocity;
+  // I do not know of a robot that takes acceleration commands.
+  // However, some controllers check that this data is non-empty.
+  // Send all zeros, for now.
+  std::vector<double> acceleration(num_joints_);
+  point.accelerations = acceleration;
+
   joint_trajectory.points.push_back(point);
 }
 
@@ -807,10 +812,10 @@ bool ServoCalcs::enforcePositionLimits(trajectory_msgs::msg::JointTrajectory& jo
             std::find(joint_trajectory.joint_names.begin(), joint_trajectory.joint_names.end(), joint->getName());
         auto joint_idx = std::distance(joint_trajectory.joint_names.begin(), joint_itr);
 
-        if ((joint_trajectory.points[0].velocities[joint_idx] < 0 &&
-             (joint_angle < (limits[0].min_position + parameters_->joint_limit_margin))) ||
-            (joint_trajectory.points[0].velocities[joint_idx] > 0 &&
-             (joint_angle > (limits[0].max_position - parameters_->joint_limit_margin))))
+        if ((joint_trajectory.points.at(0).velocities[joint_idx] < 0 &&
+             (joint_angle < (limits.at(0).min_position + parameters_->joint_limit_margin))) ||
+            (joint_trajectory.points.at(0).velocities[joint_idx] > 0 &&
+             (joint_angle > (limits.at(0).max_position - parameters_->joint_limit_margin))))
         {
           rclcpp::Clock& clock = *node_->get_clock();
           RCLCPP_WARN_STREAM_THROTTLE(LOGGER, clock, ROS_LOG_THROTTLE_PERIOD,
@@ -841,10 +846,8 @@ void ServoCalcs::suddenHalt(trajectory_msgs::msg::JointTrajectory& joint_traject
   // being 0 seconds in the past, the smallest supported timestep is added as time from start to the trajectory point.
   point.time_from_start = rclcpp::Duration(0, 1);
 
-  if (parameters_->publish_joint_positions)
-    point.positions.resize(num_joints_);
-  if (parameters_->publish_joint_velocities)
-    point.velocities.resize(num_joints_);
+  point.positions.resize(num_joints_);
+  point.velocities.resize(num_joints_);
 
   // Assert the following loop is safe to execute
   assert(original_joint_state_.position.size() >= num_joints_);
@@ -852,13 +855,8 @@ void ServoCalcs::suddenHalt(trajectory_msgs::msg::JointTrajectory& joint_traject
   // Set the positions and velocities vectors
   for (std::size_t i = 0; i < num_joints_; ++i)
   {
-    // For position-controlled robots, can reset the joints to a known, good state
-    if (parameters_->publish_joint_positions)
-      point.positions[i] = original_joint_state_.position[i];
-
-    // For velocity-controlled robots, stop
-    if (parameters_->publish_joint_velocities)
-      point.velocities[i] = 0;
+    point.positions[i] = original_joint_state_.position[i];
+    point.velocities[i] = 0;
   }
 }
 
@@ -893,11 +891,11 @@ void ServoCalcs::calculateWorstCaseStopTime()
       {
         kinematic_bounds = joint_model->getVariableBounds();
         // Some joints do not have acceleration limits
-        if (kinematic_bounds[0].acceleration_bounded_)
+        if (kinematic_bounds.at(0).acceleration_bounded_)
         {
           // Be conservative when calculating overall acceleration limit from min and max limits
           accel_limit =
-              std::min(fabs(kinematic_bounds[0].min_acceleration_), fabs(kinematic_bounds[0].max_acceleration_));
+              std::min(fabs(kinematic_bounds.at(0).min_acceleration_), fabs(kinematic_bounds.at(0).max_acceleration_));
         }
         else
         {

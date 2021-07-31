@@ -1,8 +1,11 @@
 set(MOVEIT_LIB_NAME moveit_trajectory_processing)
 
+find_package(trackjoint REQUIRED)
+
 add_library(${MOVEIT_LIB_NAME} SHARED
   src/iterative_time_parameterization.cpp
   src/iterative_spline_parameterization.cpp
+  src/trackjoint_traj_smoothing.cpp
   src/trajectory_tools.cpp
   src/time_optimal_trajectory_generation.cpp
 )
@@ -20,6 +23,7 @@ ament_target_dependencies(${MOVEIT_LIB_NAME}
 target_link_libraries(${MOVEIT_LIB_NAME}
   moveit_robot_state
   moveit_robot_trajectory
+  trackjoint
 )
 
 install(DIRECTORY include/ DESTINATION include)

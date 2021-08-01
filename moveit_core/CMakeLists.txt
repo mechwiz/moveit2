@@ -48,6 +48,7 @@ find_package(trajectory_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(common_interfaces REQUIRED)
 find_package(pluginlib REQUIRED)
+find_package(trackjoint REQUIRED)
 # TODO: Port python bindings
 # find_package(pybind11 REQUIRED)
 
@@ -81,6 +82,7 @@ set(THIS_PACKAGE_INCLUDE_DIRS
     # TODO: Port python bindings
     # python/tools/include
     sensor_manager/include
+    trackjoint/include
     trajectory_processing/include
     utils/include
 )

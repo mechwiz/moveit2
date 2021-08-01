@@ -6,6 +6,7 @@
 #include <limits>
 #include <moveit/trajectory_processing/trackjoint_traj_smoothing.h>
 #include <rclcpp/rclcpp.hpp>
+#include <trackjoint/trajectory_generator.h>
 #include <vector>
 
 namespace trajectory_processing

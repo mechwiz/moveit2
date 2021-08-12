@@ -339,7 +339,7 @@ void ServoCalcs::calculateSingleIteration()
     resetLowPassFilters(original_joint_state_);
 
     wait_for_servo_commands_ = !new_input_cmd_;
-    RCLCPP_ERROR_STREAM(LOGGER, "wait_for_servo_commands_: " << wait_for_servo_commands_ << "  paused_: " << paused_);
+//    RCLCPP_ERROR_STREAM(LOGGER, "wait_for_servo_commands_: " << wait_for_servo_commands_ << "  paused_: " << paused_);
 
     // Early exit
     return;
@@ -1219,11 +1219,15 @@ void ServoCalcs::setPaused(bool paused)
 {
   if (paused)
   {
-    RCLCPP_WARN_STREAM(LOGGER, "PAUSING!");
+    RCLCPP_ERROR_STREAM(LOGGER, "PAUSING!");
+    RCLCPP_ERROR_STREAM(LOGGER, "PAUSING!");
+    RCLCPP_ERROR_STREAM(LOGGER, "PAUSING!");
   }
   else
   {
-    RCLCPP_WARN_STREAM(LOGGER, "UNPAUSING!");
+    RCLCPP_ERROR_STREAM(LOGGER, "UNPAUSING!");
+    RCLCPP_ERROR_STREAM(LOGGER, "UNPAUSING!");
+    RCLCPP_ERROR_STREAM(LOGGER, "UNPAUSING!");
   }
   paused_ = paused;
   wait_for_servo_commands_ = true;

@@ -256,9 +256,6 @@ void ServoCalcs::mainCalcLoop()
       input_cv_.wait(main_loop_lock, [this] { return (new_input_cmd_ || stop_requested_); });
     }
 
-    // reset new_input_cmd_ flag
-    new_input_cmd_ = false;
-
     // run servo calcs
     const auto start_time = node_->now();
     calculateSingleIteration();
@@ -341,9 +338,8 @@ void ServoCalcs::calculateSingleIteration()
   {
     resetLowPassFilters(original_joint_state_);
 
-    // Check if there are any new commands with valid timestamp
-    wait_for_servo_commands_ =
-        twist_stamped_cmd_.header.stamp == rclcpp::Time(0.) && joint_servo_cmd_.header.stamp == rclcpp::Time(0.);
+    wait_for_servo_commands_ = !new_input_cmd_;
+    RCLCPP_ERROR_STREAM(LOGGER, "wait_for_servo_commands_: " << wait_for_servo_commands_ << "  paused_: " << paused_);
 
     // Early exit
     return;
@@ -445,7 +441,17 @@ void ServoCalcs::calculateSingleIteration()
       else if (parameters_->publish_joint_velocities && !joint_trajectory->points.empty())
         joints->data = joint_trajectory->points[0].velocities;
       *last_sent_command_ = *joint_trajectory;
+      RCLCPP_WARN_STREAM(LOGGER, "PUBLISHING!");
       multiarray_outgoing_cmd_pub_->publish(std::move(joints));
+      if (!joint_trajectory->points.empty())
+      {
+        rclcpp::Clock& clock = *node_->get_clock();
+        RCLCPP_INFO_STREAM_THROTTLE(LOGGER, clock, std::chrono::milliseconds(1000).count(), "J2 being published: " << last_sent_command_->points[0].positions[2]);
+      }
+      else
+      {
+        RCLCPP_ERROR_STREAM(LOGGER, "Published an empty message?!");
+      }
     }
   }
 
@@ -1211,7 +1217,17 @@ bool ServoCalcs::resetServoStatus(const std::shared_ptr<std_srvs::srv::Empty::Re
 
 void ServoCalcs::setPaused(bool paused)
 {
+  if (paused)
+  {
+    RCLCPP_WARN_STREAM(LOGGER, "PAUSING!");
+  }
+  else
+  {
+    RCLCPP_WARN_STREAM(LOGGER, "UNPAUSING!");
+  }
   paused_ = paused;
+  wait_for_servo_commands_ = true;
+  new_input_cmd_ = false;
 }
 
 }  // namespace moveit_servo

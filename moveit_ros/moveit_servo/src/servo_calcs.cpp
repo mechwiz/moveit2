@@ -182,6 +182,8 @@ ServoCalcs::ServoCalcs(rclcpp::Node::SharedPtr node,
   reflexxes_wrapper::setSelectionVectorAllTrue(reflexxes_velocity_input_param_.get(), num_joints_);
   // Initialize positions/vels/accels to zeros. Current positions will be updated later
   reflexxes_wrapper::initializePositionInputStateToZeros(reflexxes_velocity_input_param_.get(), num_joints_);
+  // Phase synchronization is the best option for maintaining the correct direction of motion
+  reflexxes_flags_.SynchronizationBehavior = RMLFlags::PHASE_SYNCHRONIZATION_IF_POSSIBLE;
   // Set velocity and acceleration limits
   std::vector<double> velocity_limits;
   std::vector<double> acceleration_limits;

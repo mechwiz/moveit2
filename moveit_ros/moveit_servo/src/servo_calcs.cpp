@@ -204,20 +204,20 @@ ServoCalcs::ServoCalcs(rclcpp::Node::SharedPtr node,
                                                                             "moveit_servo::SmoothingBaseClass");
   // For now, there is only one option for smoothing plugins
   // TODO(andyz): load from parameter
-  const std::string SMOOTHER_PLUGIN_NAME = "moveit_servo/LowPassFilter";
+  const std::string smoother_plugin_name = "moveit_servo/LowPassFilter";
   try
   {
-    smoother_ = smoothing_loader.createSharedInstance(SMOOTHER_PLUGIN_NAME);
+    smoother_ = smoothing_loader.createSharedInstance(smoother_plugin_name);
   }
   catch (pluginlib::PluginlibException& ex)
   {
-    RCLCPP_ERROR(LOGGER, "Exception while loading the smoothing plugin '%s': '%s'", SMOOTHER_PLUGIN_NAME.c_str(),
+    RCLCPP_ERROR(LOGGER, "Exception while loading the smoothing plugin '%s': '%s'", smoother_plugin_name.c_str(),
                  ex.what());
     std::exit(EXIT_FAILURE);
   }
 
   // Initialize the smoothing plugin
-  if (SMOOTHER_PLUGIN_NAME == "moveit_servo/LowPassFilter")
+  if (smoother_plugin_name == "moveit_servo/LowPassFilter")
   {
     smoother_->initialize(node_, planning_scene_monitor_->getRobotModel(), num_joints_, parameters_);
   }
@@ -679,8 +679,6 @@ bool ServoCalcs::applyJointUpdate(Eigen::ArrayXd& delta_theta, sensor_msgs::msg:
                                  "Lengths of output and increments do not match.");
     return false;
   }
-
-  smoother_->doSmoothing(delta_theta);
 
   for (std::size_t i = 0; i < joint_state.position.size(); ++i)
   {

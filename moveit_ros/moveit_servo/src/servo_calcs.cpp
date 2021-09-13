@@ -175,6 +175,7 @@ ServoCalcs::ServoCalcs(rclcpp::Node::SharedPtr node,
   {
     // A map for the indices of incoming joint commands
     joint_state_name_map_[internal_joint_state_.name[i]] = i;
+<<<<<<< HEAD
   }
 
   // Load the smoothing plugin
@@ -194,6 +195,8 @@ ServoCalcs::ServoCalcs(rclcpp::Node::SharedPtr node,
   {
     RCLCPP_ERROR(LOGGER, "Smoothing plugin could not be initialized");
     std::exit(EXIT_FAILURE);
+=======
+>>>>>>> Purge the previous filter implementation
   }
 
   // Load the smoothing plugin
@@ -675,6 +678,8 @@ bool ServoCalcs::applyJointUpdate(Eigen::ArrayXd& delta_theta, sensor_msgs::msg:
                                  "Lengths of output and increments do not match.");
     return false;
   }
+
+  smoother_->doSmoothing(delta_theta);
 
   for (std::size_t i = 0; i < joint_state.position.size(); ++i)
   {

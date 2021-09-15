@@ -74,13 +74,6 @@ include_directories(
 ## C++ Libraries ##
 ###################
 
-# Plugins for interchangeable smoothing algorithms
-add_library(low_pass_filter SHARED
-  src/smoothing_plugin/low_pass_filter.cpp
-)
-set_target_properties(low_pass_filter PROPERTIES VERSION "${${PROJECT_NAME}_VERSION}")
-ament_target_dependencies(low_pass_filter ${THIS_PACKAGE_INCLUDE_DEPENDS})
-
 # This library provides a way of loading parameters for servo
 add_library(${SERVO_PARAM_LIB_NAME} SHARED src/servo_parameters.cpp)
 set_target_properties(${SERVO_PARAM_LIB_NAME} PROPERTIES VERSION "${${PROJECT_NAME}_VERSION}")
@@ -146,7 +139,6 @@ ament_target_dependencies(${FAKE_SERVO_CMDS_NAME}
 # Install Libraries
 install(
   TARGETS
-    low_pass_filter
     ${SERVO_LIB_NAME}
     ${SERVO_LIB_NAME}_parameters
     ${POSE_TRACKING}
@@ -175,9 +167,6 @@ install(
 install(DIRECTORY include/ DESTINATION include)
 install(DIRECTORY launch DESTINATION share/${PROJECT_NAME})
 install(DIRECTORY config DESTINATION share/${PROJECT_NAME})
-
-# Motion smoothing plugins
-pluginlib_export_plugin_description_file(moveit_servo lowpass_filter_plugin.xml)
 
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 ament_export_dependencies(${THIS_PACKAGE_INCLUDE_DEPENDS})

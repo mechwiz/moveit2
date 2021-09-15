@@ -75,6 +75,7 @@ set(THIS_PACKAGE_INCLUDE_DIRS
     robot_trajectory/include
     kinematic_constraints/include
     macros/include
+    online_signal_smoothing/include
     planning_interface/include
     planning_request_adapter/include
     planning_scene/include
@@ -82,7 +83,6 @@ set(THIS_PACKAGE_INCLUDE_DIRS
     # TODO: Port python bindings
     # python/tools/include
     sensor_manager/include
-    online_signal_smoothing/include
     trajectory_processing/include
     utils/include
 )
@@ -178,16 +178,12 @@ add_subdirectory(robot_model)
 add_subdirectory(robot_state)
 add_subdirectory(robot_trajectory)
 add_subdirectory(sensor_manager)
+add_subdirectory(smoothing_plugins)
 add_subdirectory(trajectory_processing)
 add_subdirectory(transforms)
 add_subdirectory(utils)
 add_subdirectory(version)
 
-add_subdirectory(collision_detection)
-add_subdirectory(collision_detection_bullet)
-add_subdirectory(collision_detection_fcl)
-
-# TODO(andyz): why don't these compile when alphabetized with the rest?
 add_subdirectory(collision_detection)
 add_subdirectory(collision_detection_bullet)
 add_subdirectory(collision_detection_fcl)

@@ -1,7 +1,7 @@
 /*********************************************************************
  * Software License Agreement (BSD License)
  *
- *  Copyright (c) 2020, PickNik Inc.
+ *  Copyright (c) 2021, PickNik Inc.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -32,42 +32,37 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-/*      Title     : test_butterworth_filter.cpp
- *      Project   : moveit_core
- *      Created   : 07/21/2020
- *      Author    : Adam Pettinger
- *      Desc      : Unit test for moveit::ButterworthFilter
+/* Author: Andy Zelenak
+   Description: Jerk-limited smoothing with the Ruckig library.
  */
 
-#include <gtest/gtest.h>
-#include <moveit/single_waypt_smoothing_plugins/butterworth_filter.h>
+#pragma once
 
-TEST(SMOOTHING_PLUGINS, FilterConverge)
+#include <moveit/robot_model/robot_model.h>
+#include <moveit/online_signal_smoothing/smoothing_base_class.h>
+
+#include <ruckig/ruckig.hpp>
+
+namespace online_signal_smoothing
 {
-  single_waypt_smoothing_plugins::ButterworthFilter lpf(2.0);
-  EXPECT_DOUBLE_EQ(0.0, lpf.filter(0.0));
-  double value;
-  for (size_t i = 0; i < 100; ++i)
-  {
-    value = lpf.filter(5.0);
-  }
-  // Check that the filter converges to expected value after many identical messages
-  EXPECT_DOUBLE_EQ(5.0, value);
-
-  // Then check that a different measurement changes the value
-  EXPECT_NE(5.0, lpf.filter(100.0));
-}
-
-TEST(SMOOTHING_PLUGINS, FilterReset)
+// Plugin
+class RuckigFilterPlugin : public SmoothingBaseClass
 {
-  single_waypt_smoothing_plugins::ButterworthFilter lpf(2.0);
-  EXPECT_DOUBLE_EQ(0.0, lpf.filter(0.0));
-  lpf.reset(5.0);
-  double value = lpf.filter(5.0);
+public:
+  RuckigFilterPlugin(){};
 
-  // Check that the filter was properly set to the desired value
-  EXPECT_DOUBLE_EQ(5.0, value);
+  bool initialize(rclcpp::Node::SharedPtr node, const moveit::core::JointModelGroup& group, size_t num_dof,
+                  double timestep) override;
 
-  // Then check that a different measurement changes the value
-  EXPECT_NE(5.0, lpf.filter(100.0));
-}
+  bool doSmoothing(std::vector<double>& /*unused*/, std::vector<double>& velocity_vector) override;
+
+  bool reset(const std::vector<double>& joint_positions) override;
+
+private:
+  size_t num_dof_;
+  rclcpp::Node::SharedPtr node_;
+  std::shared_ptr<ruckig::Ruckig<0, true /*debug*/>> ruckig_;
+  std::shared_ptr<ruckig::InputParameter<0>> ruckig_input_;
+  std::shared_ptr<ruckig::OutputParameter<0>> ruckig_output_;
+};
+}  // namespace online_signal_smoothing

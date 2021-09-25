@@ -33,42 +33,64 @@
  *********************************************************************/
 
 /* Author: Andy Zelenak
-   Description: Defines an interface for smoothing algorithms.
+   Description: A first-order Butterworth low-pass filter. There is only one parameter to tune.
  */
 
 #pragma once
 
-#include <moveit/robot_model/robot_model.h>
+#include <cstddef>
 
-namespace single_waypt_smoothing_plugins
+#include <moveit/robot_model/robot_model.h>
+#include <moveit/online_signal_smoothing/smoothing_base_class.h>
+
+namespace online_signal_smoothing
 {
-class SmoothingBaseClass
+/**
+ * Class ButterworthFilter - Implementation of a signal filter to soften jerks.
+ * This is a first-order Butterworth low-pass filter. First-order was chosen for 2 reasons:
+ * - It doesn't overshoot
+ * - Computational efficiency
+ */
+class ButterworthFilter
 {
 public:
   /**
-   * Initialize the smoothing algorithm
-   * @param node ROS node, typically used for parameter retrieval
-   * @param group joint group of interest
-   * @param num_dof number of actuated joints in the JointGroup Servo controls
-   * @param timestep control loop period [seconds]
-   * @return True if initialization was successful
+   * Constructor.
+   * @param low_pass_filter_coeff Larger filter_coeff-> more smoothing of servo commands, but more lag.
+   * Rough plot, with cutoff frequency on the y-axis:
+   * https://www.wolframalpha.com/input/?i=plot+arccot(c)
    */
-  virtual bool initialize(rclcpp::Node::SharedPtr node, const moveit::core::JointModelGroup& group /*unused*/,
-                          size_t num_dof, double timestep) = 0;
+  ButterworthFilter(double low_pass_filter_coeff);
 
-  /**
-   * Smooth an array of joint position deltas
-   * @param delta_theta array of joint position commands
-   * @param delta_theta array of joint velocity commands
-   * @return True if initialization was successful
-   */
-  virtual bool doSmoothing(std::vector<double>& position_vector, std::vector<double>& velocity_vector) = 0;
+  double filter(double new_measurement);
 
-  /**
-   * Reset to a given joint state
-   * @param joint_positions reset the filters to these joint positions
-   * @return True if reset was successful
-   */
-  virtual bool reset(const std::vector<double>& joint_positions) = 0;
+  void reset(const double data);
+
+private:
+  static constexpr std::size_t FILTER_LENGTH = 2;
+  std::array<double, FILTER_LENGTH> previous_measurements_;
+  double previous_filtered_measurement_;
+  // Scale and feedback term are calculated from supplied filter coefficient
+  double scale_term_;
+  double feedback_term_;
 };
-}  // namespace single_waypt_smoothing_plugins
+
+// Plugin
+class ButterworthFilterPlugin : public SmoothingBaseClass
+{
+public:
+  ButterworthFilterPlugin(){};
+
+  bool initialize(rclcpp::Node::SharedPtr node, const moveit::core::JointModelGroup& group /*unused*/, size_t num_dof,
+                  double /*unused*/) override;
+
+  bool doSmoothing(std::vector<double>& position_vector, std::vector<double>& /*unused*/) override;
+
+  bool reset(const std::vector<double>& joint_positions) override;
+
+private:
+  rclcpp::Node::SharedPtr node_;
+  std::vector<ButterworthFilter> position_filters_;
+  size_t num_dof_;
+};
+}  // namespace online_signal_smoothing

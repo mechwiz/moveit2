@@ -33,36 +33,42 @@
  *********************************************************************/
 
 /* Author: Andy Zelenak
-   Description: Jerk-limited smoothing with the Ruckig library.
+   Description: Defines an interface for smoothing algorithms.
  */
 
 #pragma once
 
 #include <moveit/robot_model/robot_model.h>
-#include <moveit/single_waypt_smoothing_plugins/smoothing_base_class.h>
 
-#include <ruckig/ruckig.hpp>
-
-namespace single_waypt_smoothing_plugins
+namespace online_signal_smoothing
 {
-// Plugin
-class RuckigFilterPlugin : public SmoothingBaseClass
+class SmoothingBaseClass
 {
 public:
-  RuckigFilterPlugin(){};
+  /**
+   * Initialize the smoothing algorithm
+   * @param node ROS node, typically used for parameter retrieval
+   * @param group joint group of interest
+   * @param num_dof number of actuated joints in the JointGroup Servo controls
+   * @param timestep control loop period [seconds]
+   * @return True if initialization was successful
+   */
+  virtual bool initialize(rclcpp::Node::SharedPtr node, const moveit::core::JointModelGroup& group /*unused*/,
+                          size_t num_dof, double timestep) = 0;
 
-  bool initialize(rclcpp::Node::SharedPtr node, const moveit::core::JointModelGroup& group, size_t num_dof,
-                  double timestep) override;
+  /**
+   * Smooth an array of joint position deltas
+   * @param delta_theta array of joint position commands
+   * @param delta_theta array of joint velocity commands
+   * @return True if initialization was successful
+   */
+  virtual bool doSmoothing(std::vector<double>& position_vector, std::vector<double>& velocity_vector) = 0;
 
-  bool doSmoothing(std::vector<double>& /*unused*/, std::vector<double>& velocity_vector) override;
-
-  bool reset(const std::vector<double>& joint_positions) override;
-
-private:
-  size_t num_dof_;
-  rclcpp::Node::SharedPtr node_;
-  std::shared_ptr<ruckig::Ruckig<0, true /*debug*/>> ruckig_;
-  std::shared_ptr<ruckig::InputParameter<0>> ruckig_input_;
-  std::shared_ptr<ruckig::OutputParameter<0>> ruckig_output_;
+  /**
+   * Reset to a given joint state
+   * @param joint_positions reset the filters to these joint positions
+   * @return True if reset was successful
+   */
+  virtual bool reset(const std::vector<double>& joint_positions) = 0;
 };
-}  // namespace single_waypt_smoothing_plugins
+}  // namespace online_signal_smoothing

@@ -1,6 +1,6 @@
-#include <moveit/smoothing_plugins/butterworth_filter.h>
+#include <moveit/online_signal_smoothing/butterworth_filter.h>
 
-namespace smoothing_plugins
+namespace online_signal_smoothing
 {
 namespace
 {
@@ -15,21 +15,21 @@ ButterworthFilter::ButterworthFilter(double low_pass_filter_coeff)
 {
   // guarantee this doesn't change because the logic below depends on this length implicity
   static_assert(ButterworthFilter::FILTER_LENGTH == 2,
-                "smoothing_plugins::ButterworthFilter::FILTER_LENGTH should be 2");
+                "online_signal_smoothing::ButterworthFilter::FILTER_LENGTH should be 2");
 
   if (std::isinf(feedback_term_))
-    throw std::length_error("smoothing_plugins::ButterworthFilter: infinite feedback_term_");
+    throw std::length_error("online_signal_smoothing::ButterworthFilter: infinite feedback_term_");
 
   if (std::isinf(scale_term_))
-    throw std::length_error("smoothing_plugins::ButterworthFilter: infinite scale_term_");
+    throw std::length_error("online_signal_smoothing::ButterworthFilter: infinite scale_term_");
 
   if (low_pass_filter_coeff < 1)
     throw std::length_error(
-        "smoothing_plugins::ButterworthFilter: Filter coefficient < 1. makes the lowpass filter unstable");
+        "online_signal_smoothing::ButterworthFilter: Filter coefficient < 1. makes the lowpass filter unstable");
 
   if (std::abs(feedback_term_) < EPSILON)
     throw std::length_error(
-        "smoothing_plugins::ButterworthFilter: Filter coefficient value resulted in feedback term of 0");
+        "online_signal_smoothing::ButterworthFilter: Filter coefficient value resulted in feedback term of 0");
 }
 
 double ButterworthFilter::filter(double new_measurement)
@@ -100,7 +100,7 @@ bool ButterworthFilterPlugin::reset(const std::vector<double>& joint_positions)
   return true;
 };
 
-}  // namespace smoothing_plugins
+}  // namespace online_signal_smoothing
 
 #include <pluginlib/class_list_macros.hpp>
-PLUGINLIB_EXPORT_CLASS(smoothing_plugins::ButterworthFilterPlugin, smoothing_plugins::SmoothingBaseClass)
+PLUGINLIB_EXPORT_CLASS(online_signal_smoothing::ButterworthFilterPlugin, online_signal_smoothing::SmoothingBaseClass)

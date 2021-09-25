@@ -1,7 +1,7 @@
 /*********************************************************************
  * Software License Agreement (BSD License)
  *
- *  Copyright (c) 2020, PickNik Inc.
+ *  Copyright (c) 2021, PickNik Inc.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -32,42 +32,41 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-/*      Title     : test_butterworth_filter.cpp
- *      Project   : moveit_core
- *      Created   : 07/21/2020
- *      Author    : Adam Pettinger
- *      Desc      : Unit test for moveit::ButterworthFilter
+/* Author: Andy Zelenak
+   Description: Defines a pluginlib interface for smoothing algorithms.
  */
 
-#include <gtest/gtest.h>
-#include <moveit/smoothing_plugins/butterworth_filter.h>
+#pragma once
 
-TEST(SMOOTHING_PLUGINS, FilterConverge)
+#include <moveit/robot_model/robot_model.h>
+
+namespace online_signal_smoothing
 {
-  smoothing_plugins::ButterworthFilter lpf(2.0);
-  EXPECT_DOUBLE_EQ(0.0, lpf.filter(0.0));
-  double value;
-  for (size_t i = 0; i < 100; ++i)
-  {
-    value = lpf.filter(5.0);
-  }
-  // Check that the filter converges to expected value after many identical messages
-  EXPECT_DOUBLE_EQ(5.0, value);
-
-  // Then check that a different measurement changes the value
-  EXPECT_NE(5.0, lpf.filter(100.0));
-}
-
-TEST(SMOOTHING_PLUGINS, FilterReset)
+class SmoothingBaseClass
 {
-  smoothing_plugins::ButterworthFilter lpf(2.0);
-  EXPECT_DOUBLE_EQ(0.0, lpf.filter(0.0));
-  lpf.reset(5.0);
-  double value = lpf.filter(5.0);
+public:
+  /**
+   * Initialize the smoothing algorithm
+   * @param node ROS node, typically used for parameter retrieval
+   * @param robot_model typically used to retrieve vel/accel/jerk limits
+   * @param num_joints number of actuated joints in the JointGroup Servo controls
+   * @return True if initialization was successful
+   */
+  virtual bool initialize(rclcpp::Node::SharedPtr node, moveit::core::RobotModelConstPtr robot_model,
+                          size_t num_joints) = 0;
 
-  // Check that the filter was properly set to the desired value
-  EXPECT_DOUBLE_EQ(5.0, value);
+  /**
+   * Smooth an array of joint position deltas
+   * @param position_vector array of joint position commands
+   * @return True if initialization was successful
+   */
+  virtual bool doSmoothing(std::vector<double>& position_vector) = 0;
 
-  // Then check that a different measurement changes the value
-  EXPECT_NE(5.0, lpf.filter(100.0));
-}
+  /**
+   * Reset to a given joint state
+   * @param joint_positions reset the filters to these joint positions
+   * @return True if reset was successful
+   */
+  virtual bool reset(const std::vector<double>& joint_positions) = 0;
+};
+}  // namespace online_signal_smoothing

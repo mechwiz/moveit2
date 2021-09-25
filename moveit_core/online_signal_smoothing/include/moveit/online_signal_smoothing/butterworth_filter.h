@@ -41,9 +41,9 @@
 #include <cstddef>
 
 #include <moveit/robot_model/robot_model.h>
-#include <moveit/smoothing_plugins/smoothing_base_class.h>
+#include <moveit/online_signal_smoothing/smoothing_base_class.h>
 
-namespace smoothing_plugins
+namespace online_signal_smoothing
 {
 /**
  * Class ButterworthFilter - Implementation of a signal filter to soften jerks.
@@ -110,4 +110,4 @@ private:
   std::vector<ButterworthFilter> position_filters_;
   size_t num_joints_;
 };
-}  // namespace smoothing_plugins
+}  // namespace online_signal_smoothing

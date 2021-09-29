@@ -19,13 +19,6 @@ target_link_libraries(moveit_butterworth_filter
 
 install(DIRECTORY include/ DESTINATION include)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/moveit_butterworth_filter_export.h DESTINATION include)
-install(TARGETS moveit_butterworth_filter EXPORT moveit_butterworth_filter)
-install(
-  TARGETS moveit_butterworth_filter EXPORT moveit_butterworth_filter
-  LIBRARY DESTINATION lib
-  ARCHIVE DESTINATION lib
-  RUNTIME DESTINATION bin
-)
 
 # Testing
 

@@ -38,13 +38,10 @@ double ButterworthFilter::filter(double new_measurement)
   previous_measurements_[1] = previous_measurements_[0];
   previous_measurements_[0] = new_measurement;
 
-  double new_filtered_measurement = scale_term_ * (previous_measurements_[1] + previous_measurements_[0] -
-                                                   feedback_term_ * previous_filtered_measurement_);
+  previous_filtered_measurement_ = scale_term_ * (previous_measurements_[1] + previous_measurements_[0] -
+                                                  feedback_term_ * previous_filtered_measurement_);
 
-  // Store the new filtered measurement
-  previous_filtered_measurement_ = new_filtered_measurement;
-
-  return new_filtered_measurement;
+  return previous_filtered_measurement_;
 }
 
 void ButterworthFilter::reset(const double data)
@@ -63,8 +60,8 @@ bool ButterworthFilterPlugin::initialize(rclcpp::Node::SharedPtr node, moveit::c
   for (std::size_t i = 0; i < num_joints_; ++i)
   {
     // Low-pass filters for the joint positions
-    // TODO(andyz): read the parameter
-    position_filters_.emplace_back(1.5);
+    // TODO(andyz): read a parameter
+    position_filters_.emplace_back(1.5 /* filter coefficient, should be >1 */);
   }
   return true;
 };
@@ -90,7 +87,7 @@ bool ButterworthFilterPlugin::reset(const std::vector<double>& joint_positions)
   if (joint_positions.size() != position_filters_.size())
   {
     RCLCPP_ERROR_THROTTLE(node_->get_logger(), *node_->get_clock(), 1000,
-                          "Position vector to be smoothed does not have the right length.");
+                          "Position vector to be reset does not have the right length.");
     return false;
   }
   for (size_t joint_idx = 0; joint_idx < joint_positions.size(); ++joint_idx)

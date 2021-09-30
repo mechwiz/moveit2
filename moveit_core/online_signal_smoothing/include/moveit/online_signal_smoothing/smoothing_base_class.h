@@ -45,6 +45,10 @@ namespace online_signal_smoothing
 class SmoothingBaseClass
 {
 public:
+  // Plugin base needs to define default constructor and destructor
+  SmoothingBaseClass() = default;
+  virtual ~SmoothingBaseClass() = default;
+
   /**
    * Initialize the smoothing algorithm
    * @param node ROS node, typically used for parameter retrieval

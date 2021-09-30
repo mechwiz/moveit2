@@ -37,6 +37,7 @@ find_package(geometry_msgs REQUIRED)
 find_package(moveit_core REQUIRED)
 find_package(moveit_msgs REQUIRED)
 find_package(moveit_ros_planning REQUIRED)
+find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(sensor_msgs REQUIRED)
@@ -55,6 +56,7 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   moveit_core
   moveit_msgs
   moveit_ros_planning
+  pluginlib
   rclcpp
   rclcpp_components
   sensor_msgs

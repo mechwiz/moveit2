@@ -437,8 +437,6 @@ void ServoCalcs::calculateSingleIteration()
   if (!have_nonzero_command_ && !done_stopping_)
   {
     filteredHalt(*joint_trajectory);
-    have_nonzero_twist_stamped_ = false;
-    have_nonzero_joint_command_ = false;
   }
   else
   {
@@ -447,7 +445,7 @@ void ServoCalcs::calculateSingleIteration()
 
   // Skip the servoing publication if all inputs have been zero for several cycles in a row.
   // num_outgoing_halt_msgs_to_publish == 0 signifies that we should keep republishing forever.
-  if (!have_nonzero_command_ && (parameters_->num_outgoing_halt_msgs_to_publish != 0) &&
+  if (!have_nonzero_command_ && done_stopping_ && (parameters_->num_outgoing_halt_msgs_to_publish != 0) &&
       (zero_velocity_count_ > parameters_->num_outgoing_halt_msgs_to_publish))
   {
     ok_to_publish_ = false;
@@ -469,7 +467,7 @@ void ServoCalcs::calculateSingleIteration()
 
   // Store last zero-velocity message flag to prevent superfluous warnings.
   // Cartesian and joint commands must both be zero.
-  if (!have_nonzero_command_)
+  if (!have_nonzero_command_ && done_stopping_)
   {
     // Avoid overflow
     if (zero_velocity_count_ < std::numeric_limits<int>::max())
@@ -903,11 +901,7 @@ void ServoCalcs::filteredHalt(trajectory_msgs::msg::JointTrajectory& joint_traje
           (joint_trajectory.points[0].positions.at(i) - original_joint_state_.position.at(i)) /
           parameters_->publish_period;
       // If velocity is very close to zero, round to zero
-      if (joint_trajectory.points[0].velocities.at(i) < STOPPED_VELOCITY_EPS)
-      {
-        joint_trajectory.points[0].velocities.at(i) = 0;
-      }
-      else
+      if (joint_trajectory.points[0].velocities.at(i) > STOPPED_VELOCITY_EPS)
       {
         done_stopping_ = false;
       }
@@ -915,7 +909,7 @@ void ServoCalcs::filteredHalt(trajectory_msgs::msg::JointTrajectory& joint_traje
     // If every joint is very close to stopped, round velocity to zero
     if (done_stopping_)
     {
-      joint_trajectory.points[0].velocities = std::vector<double>(num_joints_, 0);
+      std::fill(joint_trajectory.points[0].velocities.begin(), joint_trajectory.points[0].velocities.end(), 0);
     }
   }
 

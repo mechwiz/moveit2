@@ -473,6 +473,21 @@ void ServoCalcs::calculateSingleIteration()
 
   if (ok_to_publish_ && !paused_)
   {
+    // Clear out position commands if user did not request them (can cause interpolation issues)
+    if (!parameters_->publish_joint_positions)
+    {
+      joint_trajectory->points[0].positions.clear();
+    }
+    // Likewise for velocity and acceleration
+    if (!parameters_->publish_joint_velocities)
+    {
+      joint_trajectory->points[0].velocities.clear();
+    }
+    if (!parameters_->publish_joint_accelerations)
+    {
+      joint_trajectory->points[0].accelerations.clear();
+    }
+
     // Put the outgoing msg in the right format
     // (trajectory_msgs/JointTrajectory or std_msgs/Float64MultiArray).
     if (parameters_->command_out_type == "trajectory_msgs/JointTrajectory")
@@ -903,6 +918,17 @@ void ServoCalcs::filteredHalt(trajectory_msgs::msg::JointTrajectory& joint_traje
     if (done_stopping_)
     {
       std::fill(joint_trajectory.points[0].velocities.begin(), joint_trajectory.points[0].velocities.end(), 0);
+    }
+  }
+
+  if (parameters_->publish_joint_accelerations)
+  {
+    joint_trajectory.points[0].accelerations = std::vector<double>(num_joints_, 0);
+    for (std::size_t i = 0; i < num_joints_; ++i)
+    {
+      joint_trajectory.points[0].accelerations.at(i) =
+          (joint_trajectory.points[0].velocities.at(i) - original_joint_state_.velocity.at(i)) /
+          parameters_->publish_period;
     }
   }
 

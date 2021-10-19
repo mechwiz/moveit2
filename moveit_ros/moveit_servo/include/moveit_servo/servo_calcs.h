@@ -68,7 +68,7 @@
 // moveit_servo
 #include <moveit_servo/servo_parameters.h>
 #include <moveit_servo/status_codes.h>
-#include <moveit_servo/smoothing_plugin/smoothing_base_class.h>
+#include <moveit/online_signal_smoothing/smoothing_base_class.h>
 
 namespace moveit_servo
 {

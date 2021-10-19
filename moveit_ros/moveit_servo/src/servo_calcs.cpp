@@ -175,7 +175,6 @@ ServoCalcs::ServoCalcs(rclcpp::Node::SharedPtr node,
   {
     // A map for the indices of incoming joint commands
     joint_state_name_map_[internal_joint_state_.name[i]] = i;
-<<<<<<< HEAD
   }
 
   // Load the smoothing plugin
@@ -195,31 +194,25 @@ ServoCalcs::ServoCalcs(rclcpp::Node::SharedPtr node,
   {
     RCLCPP_ERROR(LOGGER, "Smoothing plugin could not be initialized");
     std::exit(EXIT_FAILURE);
-=======
->>>>>>> Purge the previous filter implementation
   }
 
   // Load the smoothing plugin
-  pluginlib::ClassLoader<smoothing_plugins::SmoothingBaseClass> smoothing_loader(
-      "moveit_core", "smoothing_plugins::SmoothingBaseClass");
-  // For now, there is only one option for smoothing plugins
-  // TODO(andyz): load from parameter
-  const std::string smoother_plugin_name = "smoothing_plugins::ButterworthFilterPlugin";
   try
   {
-    smoother_ = smoothing_loader.createSharedInstance(smoother_plugin_name);
+    smoother_ = smoothing_loader_.createSharedInstance(parameters_->smoothing_filter_plugin_name);
   }
   catch (pluginlib::PluginlibException& ex)
   {
-    RCLCPP_ERROR(LOGGER, "Exception while loading the smoothing plugin '%s': '%s'", smoother_plugin_name.c_str(),
-                 ex.what());
+    RCLCPP_ERROR(LOGGER, "Exception while loading the smoothing plugin '%s': '%s'",
+                 parameters_->smoothing_filter_plugin_name.c_str(), ex.what());
     std::exit(EXIT_FAILURE);
   }
 
   // Initialize the smoothing plugin
-  if (smoother_plugin_name == "moveit_servo/LowPassFilter")
+  if (!smoother_->initialize(node_, planning_scene_monitor_->getRobotModel(), num_joints_))
   {
-    smoother_->initialize(node_, planning_scene_monitor_->getRobotModel(), num_joints_);
+    RCLCPP_ERROR(LOGGER, "Smoothing plugin could not be initialized");
+    std::exit(EXIT_FAILURE);
   }
 
   // A matrix of all zeros is used to check whether matrices have been initialized

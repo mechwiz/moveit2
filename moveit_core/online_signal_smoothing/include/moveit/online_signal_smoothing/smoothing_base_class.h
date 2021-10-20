@@ -45,6 +45,9 @@ namespace online_signal_smoothing
 class SmoothingBaseClass
 {
 public:
+  SmoothingBaseClass() = default;
+  ~SmoothingBaseClass() = default;
+
   /**
    * Initialize the smoothing algorithm
    * @param node ROS node, typically used for parameter retrieval

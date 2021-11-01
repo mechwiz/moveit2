@@ -50,7 +50,7 @@ constexpr double DEFAULT_MAX_VELOCITY = 5;           // rad/s
 constexpr double DEFAULT_MAX_ACCELERATION = 10;      // rad/s^2
 constexpr double DEFAULT_MAX_JERK = 20;              // rad/s^3
 constexpr double IDENTICAL_POSITION_EPSILON = 1e-3;  // rad
-constexpr double MAX_DURATION_EXTENSION_FACTOR = 5.0;
+constexpr double MAX_DURATION_EXTENSION_FACTOR = 100.0;
 constexpr double DURATION_EXTENSION_FRACTION = 1.1;
 constexpr double MINIMUM_VELOCITY_SEARCH_MAGNITUDE = 0.01;  // rad/s. Stop searching when velocity drops below this
 }  // namespace
@@ -59,6 +59,7 @@ bool RuckigSmoothing::applySmoothing(robot_trajectory::RobotTrajectory& trajecto
                                      const double max_velocity_scaling_factor,
                                      const double max_acceleration_scaling_factor)
 {
+  robot_trajectory::RobotTrajectory reference_trajectory = trajectory;
   const moveit::core::JointModelGroup* group = trajectory.getGroup();
   if (!group)
   {
@@ -159,9 +160,18 @@ bool RuckigSmoothing::applySmoothing(robot_trajectory::RobotTrajectory& trajecto
         velocity_magnitude = getTargetVelocityMagnitude(ruckig_input, num_dof);
         // Run Ruckig
         ruckig_result = ruckig_ptr->update(ruckig_input, ruckig_output);
+        if ((ruckig_result != ruckig::Result::Working) && (ruckig_result != ruckig::Result::Finished))
+        {
+          break;
+        }
 
         // check for backward motion
         backward_motion_detected = checkForLaggingMotion(num_dof, ruckig_input, ruckig_output);
+      }
+
+      if ((ruckig_result != ruckig::Result::Working) && (ruckig_result != ruckig::Result::Finished))
+      {
+        break;
       }
 
       // Overwrite pos/vel/accel of the target waypoint
@@ -177,12 +187,19 @@ bool RuckigSmoothing::applySmoothing(robot_trajectory::RobotTrajectory& trajecto
     // If ruckig failed, the duration of the seed trajectory likely wasn't long enough.
     // Try duration extension several times.
     // TODO: see issue 767.  (https://github.com/ros-planning/moveit2/issues/767)
-    if (ruckig_result == ruckig::Result::Working)
+    if ((ruckig_result == ruckig::Result::Working) /*&&
+        (checkForIdenticalWaypoints(trajectory.getWayPoint(num_waypoints - 1), reference_trajectory.getWayPoint(num_waypoints - 1), trajectory.getGroup()) < 0.1)*/)
     {
+      RCLCPP_ERROR(LOGGER, "Position tolerance satisfied!");
       smoothing_complete = true;
     }
     else
     {
+      RCLCPP_ERROR(LOGGER, "Extending duration!");
+
+      // Reset whatever failed smoothing occured
+      trajectory = reference_trajectory;
+
       // If Ruckig failed, it's likely because the original seed trajectory did not have a long enough duration when
       // jerk is taken into account. Extend the duration and try again.
       initializeRuckigState(ruckig_input, ruckig_output, *trajectory.getFirstWayPointPtr(), num_dof, idx);

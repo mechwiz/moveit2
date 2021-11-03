@@ -74,6 +74,9 @@ bool RuckigSmoothing::applySmoothing(robot_trajectory::RobotTrajectory& trajecto
     return false;
   }
 
+  // Copy the request so we can restore it if Ruckig fails
+  robot_trajectory::RobotTrajectory requested_trajectory = trajectory;
+
   const size_t num_dof = group->getVariableCount();
 
   // This lib does not actually work properly when angles wrap around, so we need to unwind the path first
@@ -201,6 +204,8 @@ bool RuckigSmoothing::applySmoothing(robot_trajectory::RobotTrajectory& trajecto
     }
     else
     {
+      trajectory = requested_trajectory;
+
       // If Ruckig failed, it's likely because the original seed trajectory did not have a long enough duration when
       // jerk is taken into account. Extend the duration and try again.
       initializeRuckigState(ruckig_input, ruckig_output, *trajectory.getFirstWayPointPtr(), num_dof, idx);
@@ -208,7 +213,7 @@ bool RuckigSmoothing::applySmoothing(robot_trajectory::RobotTrajectory& trajecto
       for (size_t waypoint_idx = 1; waypoint_idx < num_waypoints; ++waypoint_idx)
       {
         trajectory.setWayPointDurationFromPrevious(
-            waypoint_idx, DURATION_EXTENSION_FRACTION * trajectory.getWayPointDurationFromPrevious(waypoint_idx));
+            waypoint_idx, duration_extension_factor * trajectory.getWayPointDurationFromPrevious(waypoint_idx));
         // TODO(andyz): re-calculate waypoint velocity and acceleration here?
       }
 

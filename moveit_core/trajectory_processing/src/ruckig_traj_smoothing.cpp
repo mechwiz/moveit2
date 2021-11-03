@@ -49,7 +49,7 @@ const rclcpp::Logger LOGGER = rclcpp::get_logger("moveit_trajectory_processing.r
 constexpr double DEFAULT_MAX_VELOCITY = 5;           // rad/s
 constexpr double DEFAULT_MAX_ACCELERATION = 10;      // rad/s^2
 constexpr double DEFAULT_MAX_JERK = 20;              // rad/s^3
-constexpr double IDENTICAL_POSITION_EPSILON = 1e-3;  // rad
+constexpr double IDENTICAL_POSITION_EPSILON = 1e-5;  // rad
 constexpr double MAX_DURATION_EXTENSION_FACTOR = 5.0;
 constexpr double DURATION_EXTENSION_FRACTION = 1.1;
 constexpr double MINIMUM_VELOCITY_SEARCH_MAGNITUDE = 0.01;  // rad/s. Stop searching when velocity drops below this
@@ -72,6 +72,10 @@ bool RuckigSmoothing::applySmoothing(robot_trajectory::RobotTrajectory& trajecto
     RCLCPP_ERROR(LOGGER, "Trajectory does not have enough points to smooth with Ruckig");
     return false;
   }
+
+  // TODO(andyz): need a deep copy here?
+  robot_trajectory::RobotTrajectory desired_trajectory(trajectory);
+  moveit::core::RobotState desired_final_state(trajectory.getLastWayPoint());
 
   const size_t num_dof = group->getVariableCount();
 
@@ -123,6 +127,7 @@ bool RuckigSmoothing::applySmoothing(robot_trajectory::RobotTrajectory& trajecto
   double duration_extension_factor = 1;
   while ((duration_extension_factor < MAX_DURATION_EXTENSION_FACTOR) && !smoothing_complete)
   {
+    RCLCPP_WARN_STREAM(LOGGER, "duration_extension_factor: " << duration_extension_factor);
     for (size_t waypoint_idx = 0; waypoint_idx < num_waypoints - 1; ++waypoint_idx)
     {
       moveit::core::RobotStatePtr next_waypoint = trajectory.getWayPointPtr(waypoint_idx + 1);
@@ -178,7 +183,9 @@ bool RuckigSmoothing::applySmoothing(robot_trajectory::RobotTrajectory& trajecto
     // If ruckig failed, the duration of the seed trajectory likely wasn't long enough.
     // Try duration extension several times.
     // TODO: see issue 767.  (https://github.com/ros-planning/moveit2/issues/767)
-    if (ruckig_result == ruckig::Result::Working)
+    RCLCPP_WARN_STREAM(LOGGER, "Final waypoint check:");
+    if (checkForIdenticalWaypoints(*trajectory.getWayPointPtr(num_waypoints - 1), desired_final_state,
+                                   trajectory.getGroup()))
     {
       smoothing_complete = true;
     }
@@ -188,14 +195,14 @@ bool RuckigSmoothing::applySmoothing(robot_trajectory::RobotTrajectory& trajecto
       // jerk is taken into account. Extend the duration and try again.
       initializeRuckigState(ruckig_input, ruckig_output, *trajectory.getFirstWayPointPtr(), num_dof, idx);
       duration_extension_factor *= DURATION_EXTENSION_FRACTION;
-      for (size_t waypoint_idx = 1; waypoint_idx < num_waypoints; ++waypoint_idx)
+      timestep *= DURATION_EXTENSION_FRACTION;
+      for (size_t waypoint_idx = 0; waypoint_idx < num_waypoints; ++waypoint_idx)
       {
-        trajectory.setWayPointDurationFromPrevious(
-            waypoint_idx, DURATION_EXTENSION_FRACTION * trajectory.getWayPointDurationFromPrevious(waypoint_idx));
+        RCLCPP_INFO_STREAM(LOGGER, timestep);
+        trajectory.setWayPointDurationFromPrevious(waypoint_idx, timestep);
         // TODO(andyz): re-calculate waypoint velocity and acceleration here?
       }
-
-      timestep = trajectory.getAverageSegmentDuration();
+      RCLCPP_ERROR_STREAM(LOGGER, trajectory.getAverageSegmentDuration());
       ruckig_ptr = std::make_unique<ruckig::Ruckig<0>>(num_dof, timestep);
     }
   }
@@ -235,11 +242,13 @@ void RuckigSmoothing::initializeRuckigState(ruckig::InputParameter<0>& ruckig_in
   ruckig_output.new_acceleration = ruckig_input.current_acceleration;
 }
 
-bool RuckigSmoothing::checkForIdenticalWaypoints(const moveit::core::RobotState& prev_waypoint,
-                                                 const moveit::core::RobotState& next_waypoint,
+bool RuckigSmoothing::checkForIdenticalWaypoints(const moveit::core::RobotState& w1, const moveit::core::RobotState& w2,
                                                  const moveit::core::JointModelGroup* joint_group)
 {
-  double magnitude_position_difference = prev_waypoint.distance(next_waypoint, joint_group);
+  double magnitude_position_difference = w1.distance(w2, joint_group);
+
+  RCLCPP_ERROR_STREAM(LOGGER, magnitude_position_difference
+                                  << "  " << (magnitude_position_difference <= IDENTICAL_POSITION_EPSILON));
 
   return (magnitude_position_difference <= IDENTICAL_POSITION_EPSILON);
 }

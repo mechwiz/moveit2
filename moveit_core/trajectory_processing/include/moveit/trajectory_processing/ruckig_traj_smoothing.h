@@ -81,12 +81,11 @@ private:
 
   /**
    * \brief Check if the joint positions of two waypoints are very similar.
-   * \param prev_waypoint State at waypoint i-1
-   * \param prev_waypoint State at waypoint i
+   * \param prev_waypoint State at waypoint 1
+   * \param prev_waypoint State at waypoint 2
    * \joint_group         The MoveIt JointModelGroup of interest
    */
-  static bool checkForIdenticalWaypoints(const moveit::core::RobotState& prev_waypoint,
-                                         const moveit::core::RobotState& next_waypoint,
+  static bool checkForIdenticalWaypoints(const moveit::core::RobotState& w1, const moveit::core::RobotState& w2,
                                          const moveit::core::JointModelGroup* joint_group);
 
   /**

@@ -50,7 +50,7 @@ constexpr double DEFAULT_MAX_VELOCITY = 5;           // rad/s
 constexpr double DEFAULT_MAX_ACCELERATION = 10;      // rad/s^2
 constexpr double DEFAULT_MAX_JERK = 20;              // rad/s^3
 constexpr double IDENTICAL_POSITION_EPSILON = 1e-3;  // rad
-constexpr double MAX_DURATION_EXTENSION_FACTOR = 5.0;
+constexpr double MAX_DURATION_EXTENSION_FACTOR = 20.0;
 constexpr double DURATION_EXTENSION_FRACTION = 1.1;
 constexpr double MINIMUM_VELOCITY_SEARCH_MAGNITUDE = 0.01;  // rad/s. Stop searching when velocity drops below this
 }  // namespace
@@ -67,6 +67,7 @@ bool RuckigSmoothing::applySmoothing(robot_trajectory::RobotTrajectory& trajecto
   }
 
   const size_t num_waypoints = trajectory.getWayPointCount();
+  RCLCPP_ERROR_STREAM(LOGGER, "Num waypoints: " << num_waypoints);
   if (num_waypoints < 2)
   {
     RCLCPP_ERROR(LOGGER, "Trajectory does not have enough points to smooth with Ruckig");
@@ -121,10 +122,12 @@ bool RuckigSmoothing::applySmoothing(robot_trajectory::RobotTrajectory& trajecto
   ruckig::Result ruckig_result;
   bool smoothing_complete = false;
   double duration_extension_factor = 1;
+  size_t last_successful_waypoint = 0;
   while ((duration_extension_factor < MAX_DURATION_EXTENSION_FACTOR) && !smoothing_complete)
   {
-    // Up to waypoint_idx i-2 so we don't change the final waypoint
-    for (size_t waypoint_idx = 0; waypoint_idx < num_waypoints - 2; ++waypoint_idx)
+    last_successful_waypoint = 0;
+
+    for (size_t waypoint_idx = 0; waypoint_idx < num_waypoints - 1; ++waypoint_idx)
     {
       // Waypoints of the trajectory might not be evenly spaced, so re-initialize Ruckig with the correct
       // timestep for each set of waypoints.
@@ -140,6 +143,7 @@ bool RuckigSmoothing::applySmoothing(robot_trajectory::RobotTrajectory& trajecto
           checkForIdenticalWaypoints(*trajectory.getWayPointPtr(waypoint_idx), *next_waypoint, trajectory.getGroup());
       if (identical_waypoint)
       {
+        last_successful_waypoint = waypoint_idx + 1;
         continue;
       }
 
@@ -170,6 +174,12 @@ bool RuckigSmoothing::applySmoothing(robot_trajectory::RobotTrajectory& trajecto
         backward_motion_detected = checkForLaggingMotion(num_dof, ruckig_input, ruckig_output);
       }
 
+      if (ruckig_result == ruckig::Result::Working)
+      {
+        last_successful_waypoint = waypoint_idx + 1;
+        RCLCPP_WARN_STREAM(LOGGER, last_successful_waypoint);
+      }
+
       // Overwrite pos/vel/accel of the target waypoint
       for (size_t joint = 0; joint < num_dof; ++joint)
       {
@@ -182,8 +192,9 @@ bool RuckigSmoothing::applySmoothing(robot_trajectory::RobotTrajectory& trajecto
 
     // If ruckig failed, the duration of the seed trajectory likely wasn't long enough.
     // Try duration extension several times.
+    // TODO: check that final positions match the desired, too
     // TODO: see issue 767.  (https://github.com/ros-planning/moveit2/issues/767)
-    if (ruckig_result == ruckig::Result::Working)
+    if (last_successful_waypoint == num_waypoints - 1)
     {
       RCLCPP_WARN_STREAM(LOGGER, "Smoothing complete!");
       smoothing_complete = true;
@@ -201,9 +212,7 @@ bool RuckigSmoothing::applySmoothing(robot_trajectory::RobotTrajectory& trajecto
         // TODO(andyz): re-calculate waypoint velocity and acceleration here?
       }
 
-      //      timestep = trajectory.getAverageSegmentDuration();
       RCLCPP_ERROR_STREAM(LOGGER, timestep);
-      ruckig_ptr = std::make_unique<ruckig::Ruckig<0>>(num_dof, timestep);
     }
   }
 

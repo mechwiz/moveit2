@@ -123,8 +123,13 @@ bool RuckigSmoothing::applySmoothing(robot_trajectory::RobotTrajectory& trajecto
   double duration_extension_factor = 1;
   while ((duration_extension_factor < MAX_DURATION_EXTENSION_FACTOR) && !smoothing_complete)
   {
-    for (size_t waypoint_idx = 0; waypoint_idx < num_waypoints - 1; ++waypoint_idx)
+    // Up to waypoint_idx i-2 so we don't change the final waypoint
+    for (size_t waypoint_idx = 0; waypoint_idx < num_waypoints - 2; ++waypoint_idx)
     {
+      // Waypoints of the trajectory might not be evenly spaced, so re-initialize Ruckig with the correct
+      // timestep for each set of waypoints.
+      timestep = trajectory.getWayPointDurationFromPrevious(waypoint_idx + 1);
+      ruckig_ptr = std::make_unique<ruckig::Ruckig<0>>(num_dof, timestep);
       moveit::core::RobotStatePtr next_waypoint = trajectory.getWayPointPtr(waypoint_idx + 1);
 
       getNextRuckigInput(ruckig_output, next_waypoint, num_dof, idx, ruckig_input);
@@ -180,6 +185,7 @@ bool RuckigSmoothing::applySmoothing(robot_trajectory::RobotTrajectory& trajecto
     // TODO: see issue 767.  (https://github.com/ros-planning/moveit2/issues/767)
     if (ruckig_result == ruckig::Result::Working)
     {
+      RCLCPP_WARN_STREAM(LOGGER, "Smoothing complete!");
       smoothing_complete = true;
     }
     else
@@ -195,7 +201,8 @@ bool RuckigSmoothing::applySmoothing(robot_trajectory::RobotTrajectory& trajecto
         // TODO(andyz): re-calculate waypoint velocity and acceleration here?
       }
 
-      timestep = trajectory.getAverageSegmentDuration();
+      //      timestep = trajectory.getAverageSegmentDuration();
+      RCLCPP_ERROR_STREAM(LOGGER, timestep);
       ruckig_ptr = std::make_unique<ruckig::Ruckig<0>>(num_dof, timestep);
     }
   }

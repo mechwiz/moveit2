@@ -39,6 +39,7 @@
 #include <list>
 #include <moveit/robot_trajectory/robot_trajectory.h>
 #include <ruckig/ruckig.hpp>
+#include <unsupported/Eigen/Splines>  // Spline-fitting is used to extend trajectory duration
 
 namespace trajectory_processing
 {

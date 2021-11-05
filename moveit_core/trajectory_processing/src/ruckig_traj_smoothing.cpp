@@ -81,6 +81,7 @@ bool RuckigSmoothing::applySmoothing(robot_trajectory::RobotTrajectory& trajecto
   // Create a copy of the desired trajectory so we can revert it as needed.
   // Remove repeated waypoints with no change in position. Ruckig does not handle this well and there's really no
   // need to smooth it. Repeated waypoints cause circular motions.
+  // TODO(andyz): do we still need the trajectory copy if using the spline representation
   robot_trajectory::RobotTrajectory requested_trajectory(trajectory.getRobotModel(), trajectory.getGroup());
   for (size_t waypoint_idx = 0; waypoint_idx < num_waypoints - 1; ++waypoint_idx)
   {
@@ -108,12 +109,28 @@ bool RuckigSmoothing::applySmoothing(robot_trajectory::RobotTrajectory& trajecto
   // Instantiate the smoother
   double timestep = trajectory.getAverageSegmentDuration();
   std::unique_ptr<ruckig::Ruckig<0>> ruckig_ptr;
+  // TODO(andyz): reset Ruckig timestep for every waypoint, since TOTG doesn't provide constantly-spaced waypoints
   ruckig_ptr = std::make_unique<ruckig::Ruckig<0>>(num_dof, timestep);
   ruckig::InputParameter<0> ruckig_input{ num_dof };
   ruckig::OutputParameter<0> ruckig_output{ num_dof };
 
-  // Initialize the smoother
   const std::vector<int>& idx = group->getVariableIndexList();
+
+  // Represent the trajectory as a spline
+  Eigen::VectorXd times(num_waypoints);
+  std::vector<Eigen::VectorXd> positions(num_waypoints);  // A vector of positions for each joint
+
+  times[0] = 0.0;
+  for (size_t waypoint_idx = 0; waypoint_idx < num_waypoints - 1; ++waypoint_idx)
+  {
+    times[waypoint_idx] = trajectory.getWayPointDurationFromPrevious(waypoint_idx);
+    for (size_t joint = 0; joint < num_dof; ++joint)
+    {
+      positions[joint][waypoint_idx] = trajectory.getWayPointPtr(waypoint_idx)->getVariablePosition(idx.at(joint));
+    }
+  }
+
+  // Initialize the smoother
   initializeRuckigState(ruckig_input, ruckig_output, *trajectory.getFirstWayPointPtr(), num_dof, idx);
 
   // Kinematic limits (vel/accel/jerk)

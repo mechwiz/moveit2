@@ -165,12 +165,11 @@ bool RuckigSmoothing::applySmoothing(robot_trajectory::RobotTrajectory& trajecto
 
     while (backward_motion_detected || (ruckig_result != ruckig::Result::Finished))
     {
-      getNextRuckigInput(ruckig_output, target_waypoint, num_dof, idx, ruckig_input);
-
       // Run Ruckig
       ruckig_result = ruckig_ptr->update(ruckig_input, ruckig_output);
       // TODO(andyz): I get a Ruckig result -100: Error in the input parameter
       RCLCPP_WARN_STREAM(LOGGER, "Ruckig code: " << ruckig_result);
+      RCLCPP_WARN_STREAM(LOGGER, ruckig_input.to_string());
 
       // check for backward motion
       backward_motion_detected = checkForLaggingMotion(num_dof, ruckig_input, ruckig_output);
@@ -215,6 +214,8 @@ bool RuckigSmoothing::applySmoothing(robot_trajectory::RobotTrajectory& trajecto
       {
         RCLCPP_WARN_STREAM(LOGGER, "Waypoint is Finished, according to Ruckig. Moving to the next one.");
       }
+
+      getNextRuckigInput(ruckig_output, target_waypoint, num_dof, idx, ruckig_input);
     }
 
     /*

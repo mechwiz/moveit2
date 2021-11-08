@@ -154,12 +154,13 @@ bool RuckigSmoothing::applySmoothing(robot_trajectory::RobotTrajectory& trajecto
     }
   }
 
+  double velocity_magnitude = DBL_MAX;
+
   for (size_t waypoint_idx = 0; waypoint_idx < num_waypoints - 1; ++waypoint_idx)
   {
     RCLCPP_ERROR_STREAM(LOGGER, "Starting next waypoint!");
     moveit::core::RobotStatePtr target_waypoint = trajectory.getWayPointPtr(waypoint_idx + 1);
 
-    double velocity_magnitude = DBL_MAX;
     bool backward_motion_detected = true;
     ruckig::Result ruckig_result = ruckig::Result::Working;
 
@@ -172,9 +173,8 @@ bool RuckigSmoothing::applySmoothing(robot_trajectory::RobotTrajectory& trajecto
       RCLCPP_WARN_STREAM(LOGGER, ruckig_input.to_string());
 
       // check for backward motion
-      backward_motion_detected = checkForLaggingMotion(num_dof, ruckig_input, ruckig_output);
-
       // decrease target velocity
+      backward_motion_detected = false;  // checkForLaggingMotion(num_dof, ruckig_input, ruckig_output);
       if (backward_motion_detected)
       {
         for (size_t joint = 0; joint < num_dof; ++joint)
@@ -185,13 +185,20 @@ bool RuckigSmoothing::applySmoothing(robot_trajectory::RobotTrajectory& trajecto
           ruckig_input.target_acceleration.at(joint) =
               (ruckig_input.target_velocity.at(joint) - ruckig_output.new_velocity.at(joint)) / DEFAULT_RUCKIG_TIMESTEP;
         }
-        velocity_magnitude = getTargetVelocityMagnitude(ruckig_input, num_dof);
-      }
 
-      if (velocity_magnitude < MINIMUM_VELOCITY_SEARCH_MAGNITUDE)
-      {
-        RCLCPP_ERROR_STREAM(LOGGER, "Could not prevent backward motion");
-        return false;
+        // Run Ruckig
+        ruckig_result = ruckig_ptr->update(ruckig_input, ruckig_output);
+        // TODO(andyz): I get a Ruckig result -100: Error in the input parameter
+        RCLCPP_WARN_STREAM(LOGGER, "Ruckig code: " << ruckig_result);
+        RCLCPP_WARN_STREAM(LOGGER, ruckig_input.to_string());
+
+        backward_motion_detected = checkForLaggingMotion(num_dof, ruckig_input, ruckig_output);
+        velocity_magnitude = getTargetVelocityMagnitude(ruckig_input, num_dof);
+        if (backward_motion_detected && (velocity_magnitude < MINIMUM_VELOCITY_SEARCH_MAGNITUDE))
+        {
+          RCLCPP_ERROR_STREAM(LOGGER, "Could not prevent backward motion");
+          return false;
+        }
       }
 
       // Add this waypoint to the output trajectory

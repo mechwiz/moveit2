@@ -32,9 +32,6 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-/* Author: Sebastian Jahr
- */
-
 #include <moveit/local_constraint_solver_plugins/forward_trajectory.h>
 #include <moveit/planning_scene/planning_scene.h>
 #include <moveit/robot_state/conversions.h>

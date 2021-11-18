@@ -32,9 +32,6 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-/* Author: Sebastian Jahr
- */
-
 #include <moveit/hybrid_planning_manager/hybrid_planning_manager.h>
 #include <moveit/hybrid_planning_manager/hybrid_planning_events.h>
 

@@ -32,9 +32,6 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-/* Author: Sebastian Jahr
- */
-
 #include <moveit/trajectory_operator_plugins/simple_sampler.h>
 
 #include <moveit/kinematic_constraints/utils.h>

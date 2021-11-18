@@ -41,39 +41,10 @@
 #include <rclcpp/rclcpp.hpp>
 #include <moveit_msgs/msg/move_it_error_codes.hpp>
 #include <moveit/hybrid_planning_manager/hybrid_planning_events.h>
+#include <moveit/hybrid_planning_manager/moveit_error_code_interface.h>
 
 namespace moveit_hybrid_planning
 {
-// TODO(sjahr): Move this into utility package
-class MoveItErrorCode : public moveit_msgs::msg::MoveItErrorCodes
-{
-public:
-  MoveItErrorCode()
-  {
-    val = 0;
-  }
-  MoveItErrorCode(int code)
-  {
-    val = code;
-  }
-  MoveItErrorCode(const moveit_msgs::msg::MoveItErrorCodes& code)
-  {
-    val = code.val;
-  }
-  explicit operator bool() const
-  {
-    return val == moveit_msgs::msg::MoveItErrorCodes::SUCCESS;
-  }
-  bool operator==(const int code) const
-  {
-    return val == code;
-  }
-  bool operator!=(const int code) const
-  {
-    return val != code;
-  }
-};
-
 // Describes the outcome of a reaction to an event in the hybrid planning architecture
 struct ReactionResult
 {

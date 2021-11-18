@@ -32,9 +32,6 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-/* Author: Sebastian Jahr
- */
-
 #include <moveit/global_planner/moveit_planning_pipeline.h>
 #include <moveit/planning_scene/planning_scene.h>
 #include <moveit/robot_state/conversions.h>

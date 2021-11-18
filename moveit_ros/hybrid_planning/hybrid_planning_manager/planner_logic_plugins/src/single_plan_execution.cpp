@@ -32,9 +32,6 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-/* Author: Sebastian Jahr
- */
-
 #include <moveit/planner_logic_plugins/single_plan_execution.h>
 
 namespace

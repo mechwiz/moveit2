@@ -33,6 +33,7 @@
  *********************************************************************/
 
 /* Author: Sebastian Jahr
+   Description: A global planner component node that is customizable through plugins.
  */
 
 #pragma once

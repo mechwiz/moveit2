@@ -32,34 +32,41 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include <moveit/planner_logic_plugins/replan_invalidated_trajectory.h>
+/* Author: Sebastian Jahr
+   Description: Defines an interface for setting and comparing MoveIt error codes.
+ */
 
-namespace
-{
-const rclcpp::Logger LOGGER = rclcpp::get_logger("hybrid_planning_manager");
-}
+#pragma once
 
 namespace moveit_hybrid_planning
 {
-ReactionResult ReplanInvalidatedTrajectory::react(const std::string& event)
+// TODO(sjahr): Move this into utility package
+class MoveItErrorCode : public moveit_msgs::msg::MoveItErrorCodes
 {
-  if (event == "collision_ahead")
+public:
+  MoveItErrorCode()
   {
-    if (!hybrid_planning_manager_->sendGlobalPlannerAction())  // Start global planning
-    {
-      hybrid_planning_manager_->sendHybridPlanningResponse(false);
-    }
-    return ReactionResult(event, "", moveit_msgs::msg::MoveItErrorCodes::SUCCESS);
+    val = 0;
   }
-  else
+  MoveItErrorCode(int code)
   {
-    return ReactionResult(event, "'ReplanInvalidatedTrajectory' plugin cannot handle this event.",
-                          moveit_msgs::msg::MoveItErrorCodes::FAILURE);
+    val = code;
+  }
+  MoveItErrorCode(const moveit_msgs::msg::MoveItErrorCodes& code)
+  {
+    val = code.val;
+  }
+  explicit operator bool() const
+  {
+    return val == moveit_msgs::msg::MoveItErrorCodes::SUCCESS;
+  }
+  bool operator==(const int code) const
+  {
+    return val == code;
+  }
+  bool operator!=(const int code) const
+  {
+    return val != code;
   }
 };
 }  // namespace moveit_hybrid_planning
-
-#include <pluginlib/class_list_macros.hpp>
-
-PLUGINLIB_EXPORT_CLASS(moveit_hybrid_planning::ReplanInvalidatedTrajectory,
-                       moveit_hybrid_planning::PlannerLogicInterface)

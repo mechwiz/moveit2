@@ -33,6 +33,7 @@
  *********************************************************************/
 
 /* Author: Sebastian Jahr
+   Description: A demonstration that re-plans around a moving box.
  */
 
 #include <thread>
@@ -56,6 +57,7 @@ namespace
 {
 const rclcpp::Logger LOGGER = rclcpp::get_logger("test_hybrid_planning_client");
 }
+
 class HybridPlanningDemo
 {
 public:
@@ -123,7 +125,12 @@ public:
 
     planning_scene_monitor_ = std::make_shared<planning_scene_monitor::PlanningSceneMonitor>(
         node_, "robot_description", tf_buffer_, "planning_scene_monitor");
-    if (planning_scene_monitor_->getPlanningScene() != nullptr)
+    if (!planning_scene_monitor_->getPlanningScene())
+    {
+      RCLCPP_ERROR(LOGGER, "The planning scene was not retrieved!");
+      return;
+    }
+    else
     {
       planning_scene_monitor_->startStateMonitor();
       planning_scene_monitor_->providePlanningSceneService();  // let RViz display query PlanningScene
@@ -262,7 +269,7 @@ int main(int argc, char** argv)
   rclcpp::NodeOptions node_options;
   node_options.automatically_declare_parameters_from_overrides(true);
 
-  rclcpp::Node::SharedPtr node = rclcpp::Node::make_shared("hybrid_planning_test_node", "", node_options);
+  rclcpp::Node::SharedPtr node = std::make_shared<rclcpp::Node>("hybrid_planning_test_node", "", node_options);
 
   HybridPlanningDemo demo(node);
   std::thread run_demo([&demo]() {
@@ -272,6 +279,6 @@ int main(int argc, char** argv)
 
   rclcpp::spin(node);
   run_demo.join();
-
+  rclcpp::shutdown();
   return 0;
 }

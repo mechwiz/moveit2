@@ -40,7 +40,6 @@
 
 namespace moveit::hybrid_planning
 {
-// TODO(sjahr): Move this into utility package
 class MoveItErrorCode : public moveit_msgs::msg::MoveItErrorCodes
 {
 public:

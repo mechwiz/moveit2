@@ -39,7 +39,7 @@ namespace
 const rclcpp::Logger LOGGER = rclcpp::get_logger("hybrid_planning_manager");
 }
 
-namespace moveit_hybrid_planning
+namespace moveit::hybrid_planning
 {
 ReactionResult ReplanInvalidatedTrajectory::react(const std::string& event)
 {
@@ -57,9 +57,9 @@ ReactionResult ReplanInvalidatedTrajectory::react(const std::string& event)
                           moveit_msgs::msg::MoveItErrorCodes::FAILURE);
   }
 };
-}  // namespace moveit_hybrid_planning
+}  // namespace moveit::hybrid_planning
 
 #include <pluginlib/class_list_macros.hpp>
 
-PLUGINLIB_EXPORT_CLASS(moveit_hybrid_planning::ReplanInvalidatedTrajectory,
-                       moveit_hybrid_planning::PlannerLogicInterface)
+PLUGINLIB_EXPORT_CLASS(moveit::hybrid_planning::ReplanInvalidatedTrajectory,
+                       moveit::hybrid_planning::PlannerLogicInterface)

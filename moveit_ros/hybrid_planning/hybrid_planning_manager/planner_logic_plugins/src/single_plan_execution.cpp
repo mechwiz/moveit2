@@ -39,12 +39,11 @@ namespace
 const rclcpp::Logger LOGGER = rclcpp::get_logger("hybrid_planning_manager");
 }
 
-namespace moveit_hybrid_planning
+namespace moveit::hybrid_planning
 {
 std::once_flag LOCAL_PLANNER_STARTED;
 
-bool SinglePlanExecution::initialize(
-    const std::shared_ptr<moveit_hybrid_planning::HybridPlanningManager>& hybrid_planning_manager)
+bool SinglePlanExecution::initialize(const std::shared_ptr<HybridPlanningManager>& hybrid_planning_manager)
 {
   hybrid_planning_manager_ = hybrid_planning_manager;
   return true;
@@ -54,13 +53,13 @@ ReactionResult SinglePlanExecution::react(const HybridPlanningEvent& event)
 {
   switch (event)
   {
-    case moveit_hybrid_planning::HybridPlanningEvent::HYBRID_PLANNING_REQUEST_RECEIVED:
+    case HybridPlanningEvent::HYBRID_PLANNING_REQUEST_RECEIVED:
       if (!hybrid_planning_manager_->sendGlobalPlannerAction())  // Start global planning
       {
         hybrid_planning_manager_->sendHybridPlanningResponse(false);
       }
       break;
-    case moveit_hybrid_planning::HybridPlanningEvent::GLOBAL_SOLUTION_AVAILABLE:
+    case HybridPlanningEvent::GLOBAL_SOLUTION_AVAILABLE:
       std::call_once(LOCAL_PLANNER_STARTED, [this]() {            // ensure the local planner is not started twice
         if (!hybrid_planning_manager_->sendLocalPlannerAction())  // Start local planning
         {
@@ -68,7 +67,7 @@ ReactionResult SinglePlanExecution::react(const HybridPlanningEvent& event)
         }
       });
       break;
-    case moveit_hybrid_planning::HybridPlanningEvent::LOCAL_PLANNING_ACTION_FINISHED:
+    case HybridPlanningEvent::LOCAL_PLANNING_ACTION_FINISHED:
       hybrid_planning_manager_->sendHybridPlanningResponse(true);
       break;
     default:
@@ -83,8 +82,8 @@ ReactionResult SinglePlanExecution::react(const std::string& event)
   return ReactionResult(event, "'Single-Plan-Execution' plugin cannot handle events given as string.",
                         moveit_msgs::msg::MoveItErrorCodes::FAILURE);
 };
-}  // namespace moveit_hybrid_planning
+}  // namespace moveit::hybrid_planning
 
 #include <pluginlib/class_list_macros.hpp>
 
-PLUGINLIB_EXPORT_CLASS(moveit_hybrid_planning::SinglePlanExecution, moveit_hybrid_planning::PlannerLogicInterface)
+PLUGINLIB_EXPORT_CLASS(moveit::hybrid_planning::SinglePlanExecution, moveit::hybrid_planning::PlannerLogicInterface)

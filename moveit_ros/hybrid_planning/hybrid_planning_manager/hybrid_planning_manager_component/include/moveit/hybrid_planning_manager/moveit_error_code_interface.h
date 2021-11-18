@@ -38,7 +38,7 @@
 
 #pragma once
 
-namespace moveit_hybrid_planning
+namespace moveit::hybrid_planning
 {
 // TODO(sjahr): Move this into utility package
 class MoveItErrorCode : public moveit_msgs::msg::MoveItErrorCodes
@@ -69,4 +69,4 @@ public:
     return val != code;
   }
 };
-}  // namespace moveit_hybrid_planning
+}  // namespace moveit::hybrid_planning

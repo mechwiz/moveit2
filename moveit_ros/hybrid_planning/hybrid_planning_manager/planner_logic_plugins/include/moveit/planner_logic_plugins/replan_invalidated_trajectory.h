@@ -40,7 +40,7 @@
 
 #include <moveit/planner_logic_plugins/single_plan_execution.h>
 
-namespace moveit_hybrid_planning
+namespace moveit::hybrid_planning
 {
 class ReplanInvalidatedTrajectory : public SinglePlanExecution  // Inherit from SinglePlanExecution because we just want
                                                                 // alter the reaction to local planner events.
@@ -50,4 +50,4 @@ public:
   ~ReplanInvalidatedTrajectory() = default;
   ReactionResult react(const std::string& event) override;
 };
-}  // namespace moveit_hybrid_planning
+}  // namespace moveit::hybrid_planning

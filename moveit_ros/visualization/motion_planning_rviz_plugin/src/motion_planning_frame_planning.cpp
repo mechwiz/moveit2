@@ -163,7 +163,7 @@ bool MotionPlanningFrame::computeCartesianPlan()
     RCLCPP_INFO(LOGGER, "Computing time stamps %s", success ? "SUCCEDED" : "FAILED");
 
     // Store trajectory in current_plan_
-    current_plan_.reset(new moveit::planning_interface::MoveGroupInterface::Plan());
+    current_plan_ = std::make_shared<moveit::planning_interface::MoveGroupInterface::Plan>();
     rt.getRobotTrajectoryMsg(current_plan_->trajectory_);
     current_plan_->planning_time_ = (rclcpp::Clock().now() - start).seconds();
     return success;
@@ -173,7 +173,7 @@ bool MotionPlanningFrame::computeCartesianPlan()
 
 bool MotionPlanningFrame::computeJointSpacePlan()
 {
-  current_plan_.reset(new moveit::planning_interface::MoveGroupInterface::Plan());
+  current_plan_ = std::make_shared<moveit::planning_interface::MoveGroupInterface::Plan>();
   return move_group_->plan(*current_plan_) == moveit::planning_interface::MoveItErrorCode::SUCCESS;
 }
 
@@ -419,7 +419,8 @@ void MotionPlanningFrame::populatePlannersList(const std::vector<moveit_msgs::ms
 void MotionPlanningFrame::populatePlannerDescription(const moveit_msgs::msg::PlannerInterfaceDescription& desc)
 {
   std::string group = planning_display_->getCurrentPlanningGroup();
-  RCLCPP_INFO(LOGGER, "POPULATING PLANNERS %zu grp: %s", desc.planner_ids.size(), group.c_str());
+  RCLCPP_DEBUG(LOGGER, "Found %zu planners for group '%s' and pipeline '%s'", desc.planner_ids.size(), group.c_str(),
+               desc.pipeline_id.c_str());
   ui_->planning_algorithm_combo_box->clear();
 
   // set the label for the planning library
@@ -432,7 +433,7 @@ void MotionPlanningFrame::populatePlannerDescription(const moveit_msgs::msg::Pla
   {
     for (const std::string& planner_id : desc.planner_ids)
     {
-      RCLCPP_INFO(LOGGER, "planner id: %s", planner_id.c_str());
+      RCLCPP_DEBUG(LOGGER, "planner id: %s", planner_id.c_str());
       if (planner_id == group)
         found_group = true;
       else if (planner_id.substr(0, group.length()) == group)

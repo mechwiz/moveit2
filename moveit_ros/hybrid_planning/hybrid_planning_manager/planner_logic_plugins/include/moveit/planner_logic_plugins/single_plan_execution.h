@@ -49,7 +49,7 @@ public:
   ~SinglePlanExecution() = default;
   bool
   initialize(const std::shared_ptr<moveit_hybrid_planning::HybridPlanningManager>& hybrid_planning_manager) override;
-  ReactionResult react(const BasicHybridPlanningEvent& event) override;
+  ReactionResult react(const HybridPlanningEvent& event) override;
   ReactionResult react(const std::string& event) override;
 };
 }  // namespace moveit_hybrid_planning

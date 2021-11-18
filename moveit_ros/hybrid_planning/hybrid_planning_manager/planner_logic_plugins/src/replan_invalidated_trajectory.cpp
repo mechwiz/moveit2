@@ -48,7 +48,7 @@ ReactionResult ReplanInvalidatedTrajectory::react(const std::string& event)
 {
   if (event == "collision_ahead")
   {
-    if (!hybrid_planning_manager_->planGlobalTrajectory())  // Start global planning
+    if (!hybrid_planning_manager_->sendGlobalPlannerAction())  // Start global planning
     {
       hybrid_planning_manager_->sendHybridPlanningResponse(false);
     }

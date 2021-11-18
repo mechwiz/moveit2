@@ -86,13 +86,13 @@ public:
    * Send global planning request to global planner component
    * @return Global planner successfully started yes/no
    */
-  bool planGlobalTrajectory();
+  bool sendGlobalPlannerAction();
 
   /**
    * Send local planning request to local planner component
    * @return Local planner successfully started yes/no
    */
-  bool runLocalPlanner();
+  bool sendLocalPlannerAction();
 
   /**
    * Send back hybrid planning response

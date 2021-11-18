@@ -77,21 +77,21 @@ public:
 // Describes the outcome of a reaction to an event in the hybrid planning architecture
 struct ReactionResult
 {
-  ReactionResult(const BasicHybridPlanningEvent& planning_event, const std::string& error_msg, const int& error_code)
+  ReactionResult(const HybridPlanningEvent& planning_event, const std::string& error_msg, const int& error_code)
     : error_message(error_msg), error_code(error_code)
   {
     switch (planning_event)
     {
-      case moveit_hybrid_planning::BasicHybridPlanningEvent::HYBRID_PLANNING_REQUEST_RECEIVED:
+      case moveit_hybrid_planning::HybridPlanningEvent::HYBRID_PLANNING_REQUEST_RECEIVED:
         event = "Hybrid planning request received";
         break;
-      case moveit_hybrid_planning::BasicHybridPlanningEvent::GLOBAL_PLANNING_ACTION_FINISHED:
+      case moveit_hybrid_planning::HybridPlanningEvent::GLOBAL_PLANNING_ACTION_FINISHED:
         event = "Global planning action finished";
         break;
-      case moveit_hybrid_planning::BasicHybridPlanningEvent::GLOBAL_SOLUTION_AVAILABLE:
+      case moveit_hybrid_planning::HybridPlanningEvent::GLOBAL_SOLUTION_AVAILABLE:
         event = "Global solution available";
         break;
-      case moveit_hybrid_planning::BasicHybridPlanningEvent::LOCAL_PLANNING_ACTION_FINISHED:
+      case moveit_hybrid_planning::HybridPlanningEvent::LOCAL_PLANNING_ACTION_FINISHED:
         event = "Local planning action finished";
         break;
     }
@@ -128,11 +128,11 @@ public:
   initialize(const std::shared_ptr<moveit_hybrid_planning::HybridPlanningManager>& hybrid_planning_manager) = 0;
 
   /**
-   * React to event defined in BasicHybridPlanningEvent enum
+   * React to event defined in HybridPlanningEvent enum
    * @param event Basic hybrid planning event
    * @return Reaction result that summarizes the outcome of the reaction
    */
-  virtual ReactionResult react(const BasicHybridPlanningEvent& event) = 0;
+  virtual ReactionResult react(const HybridPlanningEvent& event) = 0;
 
   /**
    * React to custom event

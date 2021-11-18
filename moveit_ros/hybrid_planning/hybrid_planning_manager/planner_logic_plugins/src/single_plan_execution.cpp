@@ -53,25 +53,25 @@ bool SinglePlanExecution::initialize(
   return true;
 }
 
-ReactionResult SinglePlanExecution::react(const BasicHybridPlanningEvent& event)
+ReactionResult SinglePlanExecution::react(const HybridPlanningEvent& event)
 {
   switch (event)
   {
-    case moveit_hybrid_planning::BasicHybridPlanningEvent::HYBRID_PLANNING_REQUEST_RECEIVED:
-      if (!hybrid_planning_manager_->planGlobalTrajectory())  // Start global planning
+    case moveit_hybrid_planning::HybridPlanningEvent::HYBRID_PLANNING_REQUEST_RECEIVED:
+      if (!hybrid_planning_manager_->sendGlobalPlannerAction())  // Start global planning
       {
         hybrid_planning_manager_->sendHybridPlanningResponse(false);
       }
       break;
-    case moveit_hybrid_planning::BasicHybridPlanningEvent::GLOBAL_SOLUTION_AVAILABLE:
-      std::call_once(LOCAL_PLANNER_STARTED, [this]() {     // ensure the local planner is not started twice
-        if (!hybrid_planning_manager_->runLocalPlanner())  // Start local planning
+    case moveit_hybrid_planning::HybridPlanningEvent::GLOBAL_SOLUTION_AVAILABLE:
+      std::call_once(LOCAL_PLANNER_STARTED, [this]() {            // ensure the local planner is not started twice
+        if (!hybrid_planning_manager_->sendLocalPlannerAction())  // Start local planning
         {
           hybrid_planning_manager_->sendHybridPlanningResponse(false);
         }
       });
       break;
-    case moveit_hybrid_planning::BasicHybridPlanningEvent::LOCAL_PLANNING_ACTION_FINISHED:
+    case moveit_hybrid_planning::HybridPlanningEvent::LOCAL_PLANNING_ACTION_FINISHED:
       hybrid_planning_manager_->sendHybridPlanningResponse(true);
       break;
     default:

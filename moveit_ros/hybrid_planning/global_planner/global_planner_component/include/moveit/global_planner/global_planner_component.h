@@ -59,6 +59,7 @@ public:
 
   // This function is required to make this class a valid NodeClass
   // see https://docs.ros2.org/foxy/api/rclcpp_components/register__node__macro_8hpp.html
+  // Skip linting due to unconventional function naming
   rclcpp::node_interfaces::NodeBaseInterface::SharedPtr get_node_base_interface()  // NOLINT
   {
     return node_->get_node_base_interface();  // NOLINT

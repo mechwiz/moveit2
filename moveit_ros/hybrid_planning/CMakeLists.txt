@@ -68,7 +68,7 @@ rclcpp_components_register_nodes(moveit_hybrid_planning_manager "moveit::hybrid_
 rclcpp_components_register_nodes(moveit_global_planner_component "moveit::hybrid_planning::GlobalPlannerComponent")
 rclcpp_components_register_nodes(moveit_local_planner_component "moveit::hybrid_planning::LocalPlannerComponent")
 
-install(TARGETS ${LIBRARIES} hybrid_planning_test_node
+install(TARGETS ${LIBRARIES} hybrid_planning_demo_node
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}

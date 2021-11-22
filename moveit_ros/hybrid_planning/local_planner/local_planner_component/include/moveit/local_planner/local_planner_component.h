@@ -157,6 +157,9 @@ public:
   }
 
 private:
+  /** \brief Reset internal data members including state_ = LocalPlannerState::AWAIT_GLOBAL_TRAJECTORY */
+  void reset();
+
   std::shared_ptr<rclcpp::Node> node_;
 
   // Planner configuration

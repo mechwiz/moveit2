@@ -227,12 +227,7 @@ void LocalPlannerComponent::executeIteration()
     case LocalPlannerState::ABORT:
     {
       local_planning_goal_handle_->abort(result);
-      local_constraint_solver_instance_->reset();
-      trajectory_operator_instance_->reset();
-      timer_->cancel();
-
-      // TODO(sjahr) add proper reset function
-      state_ = LocalPlannerState::AWAIT_GLOBAL_TRAJECTORY;
+      reset();
       break;
     }
     // If the planner received an action request and a global solution it starts to plan locally
@@ -251,10 +246,7 @@ void LocalPlannerComponent::executeIteration()
       if (trajectory_operator_instance_->getTrajectoryProgress(current_robot_state) > PROGRESS_THRESHOLD)
       {
         local_planning_goal_handle_->succeed(result);
-        state_ = LocalPlannerState::AWAIT_GLOBAL_TRAJECTORY;
-        local_constraint_solver_instance_->reset();
-        trajectory_operator_instance_->reset();
-        timer_->cancel();
+        reset();
         break;
       }
 
@@ -319,15 +311,20 @@ void LocalPlannerComponent::executeIteration()
     default:
     {
       local_planning_goal_handle_->abort(result);
-      timer_->cancel();
-      local_constraint_solver_instance_->reset();
-      trajectory_operator_instance_->reset();
-      RCLCPP_ERROR(LOGGER, "Local planner somehow failed :(");  // TODO(sjahr) Add more detailed failure information
-      state_ = LocalPlannerState::AWAIT_GLOBAL_TRAJECTORY;
+      RCLCPP_ERROR(LOGGER, "Local planner somehow failed");  // TODO(sjahr) Add more detailed failure information
+      reset();
       break;
     }
   }
 };
+
+void LocalPlannerComponent::reset()
+{
+  local_constraint_solver_instance_->reset();
+  trajectory_operator_instance_->reset();
+  timer_->cancel();
+  state_ = LocalPlannerState::AWAIT_GLOBAL_TRAJECTORY;
+}
 }  // namespace moveit::hybrid_planning
 
 // Register the component with class_loader

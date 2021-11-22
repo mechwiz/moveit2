@@ -106,7 +106,6 @@ ForwardTrajectory::solve(const robot_trajectory::RobotTrajectory& local_trajecto
       }
       // Forward next waypoint to the robot controller
       robot_command.addSuffixWayPoint(local_trajectory.getWayPoint(0), 0.0);
-      local_trajectory.getWayPoint(0).printStatePositions();
     }
     else
     {

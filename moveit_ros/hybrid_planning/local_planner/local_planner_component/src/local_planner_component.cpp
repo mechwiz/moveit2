@@ -41,20 +41,24 @@
 
 #include <moveit_msgs/msg/constraints.hpp>
 
+namespace moveit::hybrid_planning
+{
+using namespace std::chrono_literals;
+
 namespace
 {
 const rclcpp::Logger LOGGER = rclcpp::get_logger("local_planner_component");
 
 // If the trajectory progress reaches more than 0.X the global goal state is considered as reached
 constexpr float PROGRESS_THRESHOLD = 0.995;
-}  // namespace
 
-namespace moveit::hybrid_planning
-{
-using namespace std::chrono_literals;
+constexpr size_t MAX_STUCK_ITERATIONS = 5;
+}  // namespace
 
 LocalPlannerComponent::LocalPlannerComponent(const rclcpp::NodeOptions& options)
   : node_{ std::make_shared<rclcpp::Node>("local_planner_component", options) }
+  , num_iterations_stuck_(0)
+  , prev_waypoint_idx_(0)
 {
   state_ = LocalPlannerState::UNCONFIGURED;
   local_planner_feedback_ = std::make_shared<moveit_msgs::action::LocalPlanner::Feedback>();
@@ -226,6 +230,8 @@ void LocalPlannerComponent::executeIteration()
     // Notify action client that local planning failed
     case LocalPlannerState::ABORT:
     {
+      result->error_code.val = moveit_msgs::msg::MoveItErrorCodes::FAILURE;
+      result->error_message = "Local planner is in an aborted state. Resetting.";
       local_planning_goal_handle_->abort(result);
       reset();
       break;
@@ -256,7 +262,27 @@ void LocalPlannerComponent::executeIteration()
       *local_planner_feedback_ =
           trajectory_operator_instance_->getLocalTrajectory(current_robot_state, local_trajectory);
 
-      // Feedback is only send when the hybrid planning architecture should react to a discrete event that occurred
+      // If stuck for several iterations in a row, re-plan globally
+      size_t target_waypoint_idx = trajectory_operator_instance_->getTargetWayPointIndex();
+      if (target_waypoint_idx == prev_waypoint_idx_)
+      {
+        ++num_iterations_stuck_;
+      }
+      else
+      {
+        prev_waypoint_idx_ = target_waypoint_idx;
+        num_iterations_stuck_ = 0;
+      }
+      if (num_iterations_stuck_ > MAX_STUCK_ITERATIONS)
+      {
+        RCLCPP_ERROR(LOGGER, "STUCK!");
+        result->error_code.val = moveit_msgs::msg::MoveItErrorCodes::FAILURE;
+        result->error_message = "The local planner has been stuck for several iterations.";
+        local_planning_goal_handle_->abort(result);
+        reset();
+      }
+
+      // Feedback is only sent when the hybrid planning architecture should react to a discrete event that occurred
       // during the identification of the local planning problem
       if (!local_planner_feedback_->feedback.empty())
       {
@@ -310,6 +336,8 @@ void LocalPlannerComponent::executeIteration()
     }
     default:
     {
+      result->error_code.val = moveit_msgs::msg::MoveItErrorCodes::FAILURE;
+      result->error_message = "Unexpected failure.";
       local_planning_goal_handle_->abort(result);
       RCLCPP_ERROR(LOGGER, "Local planner somehow failed");  // TODO(sjahr) Add more detailed failure information
       reset();
@@ -323,6 +351,7 @@ void LocalPlannerComponent::reset()
   local_constraint_solver_instance_->reset();
   trajectory_operator_instance_->reset();
   timer_->cancel();
+  num_iterations_stuck_ = 0;
   state_ = LocalPlannerState::AWAIT_GLOBAL_TRAJECTORY;
 }
 }  // namespace moveit::hybrid_planning

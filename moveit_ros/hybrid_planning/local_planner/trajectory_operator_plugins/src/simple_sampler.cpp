@@ -109,8 +109,6 @@ SimpleSampler::getLocalTrajectory(const moveit::core::RobotState& current_state,
       // Update index (and thus desired robot state)
       next_waypoint_index_ = std::min(next_waypoint_index_ + 1, reference_trajectory_->getWayPointCount() - 1);
     }
-    RCLCPP_ERROR_STREAM(LOGGER, "distance: " << next_desired_goal_state.distance(current_state));
-    RCLCPP_ERROR_STREAM(LOGGER, next_waypoint_index_ << " / " << reference_trajectory_->getWayPointCount() - 1);
 
     // Construct local trajectory containing the next global trajectory waypoint
     local_trajectory.addSuffixWayPoint(reference_trajectory_->getWayPoint(next_waypoint_index_),
@@ -119,6 +117,11 @@ SimpleSampler::getLocalTrajectory(const moveit::core::RobotState& current_state,
 
   // Return empty feedback
   return feedback_;
+}
+
+size_t SimpleSampler::getTargetWayPointIndex()
+{
+  return next_waypoint_index_;
 }
 
 double SimpleSampler::getTrajectoryProgress(const moveit::core::RobotState& current_state)

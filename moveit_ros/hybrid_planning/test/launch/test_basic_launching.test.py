@@ -34,7 +34,7 @@ class TestFixture(unittest.TestCase):
         rclpy.init()
 
         # Wait several seconds, allowing any nodes to die
-        time.sleep(8)
+        time.sleep(2)
 
         expected_nodes = [
             "controller_manager",

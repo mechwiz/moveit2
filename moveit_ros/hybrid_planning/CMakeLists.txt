@@ -69,6 +69,7 @@ rclcpp_components_register_nodes(moveit_global_planner_component "moveit::hybrid
 rclcpp_components_register_nodes(moveit_local_planner_component "moveit::hybrid_planning::LocalPlannerComponent")
 
 install(TARGETS ${LIBRARIES} hybrid_planning_demo_node
+  EXPORT export_${PROJECT_NAME}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}
@@ -85,9 +86,10 @@ pluginlib_export_plugin_description_file(moveit_hybrid_planning simple_sampler_p
 pluginlib_export_plugin_description_file(moveit_hybrid_planning replan_invalidated_trajectory_plugin.xml)
 pluginlib_export_plugin_description_file(moveit_hybrid_planning forward_trajectory_plugin.xml)
 
-ament_export_include_directories(include)
+ament_export_include_directories(${THIS_PACKAGE_INCLUDE_DIRS})
 ament_export_libraries(${LIBRARIES})
 ament_export_dependencies(${THIS_PACKAGE_INCLUDE_DEPENDS})
+ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -106,11 +108,6 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 
   # Basic launch test
-#  ament_add_gtest_executable(basic_servo_tests
-#        test/basic_servo_tests.cpp
-#  )
-#  ament_target_dependencies(basic_servo_tests ${THIS_PACKAGE_INCLUDE_DEPENDS})
-#  target_link_libraries(basic_servo_tests ${POSE_TRACKING})
   add_ros_test(test/launch/test_basic_launching.test.py TIMEOUT 120 ARGS "test_binary_dir:=${CMAKE_CURRENT_BINARY_DIR}")
 
 endif()

@@ -53,7 +53,7 @@ bool ForwardTrajectory::initialize(const rclcpp::Node::SharedPtr& node,
   else
     stop_before_collision_ = node->declare_parameter<bool>("stop_before_collision", false);
   planning_scene_monitor_ = planning_scene_monitor;
-  node_handle_ = node;
+  node_ = node;
   path_invalidation_event_send_ = false;
   return true;
 }
@@ -69,6 +69,9 @@ ForwardTrajectory::solve(const robot_trajectory::RobotTrajectory& local_trajecto
                          const std::shared_ptr<const moveit_msgs::action::LocalPlanner::Goal> local_goal,
                          trajectory_msgs::msg::JointTrajectory& local_solution)
 {
+  // A message every once in awhile is useful in case the local planner gets stuck
+  RCLCPP_INFO_THROTTLE(LOGGER, *node_->get_clock(), 2000 /* ms */, "The local planner is solving...");
+
   // Create controller command trajectory
   robot_trajectory::RobotTrajectory robot_command(local_trajectory.getRobotModel(), local_trajectory.getGroupName());
 

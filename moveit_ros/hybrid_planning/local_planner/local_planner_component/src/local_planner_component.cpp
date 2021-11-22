@@ -208,7 +208,7 @@ bool LocalPlannerComponent::initialize()
     // Local solution publisher is defined by the local constraint solver plugin
   }
 
-  state_ = LocalPlannerState::READY;
+  state_ = LocalPlannerState::AWAIT_GLOBAL_TRAJECTORY;
   return true;
 }
 
@@ -219,12 +219,6 @@ void LocalPlannerComponent::executeIteration()
   // Do different things depending on the planner's internal state
   switch (state_)
   {
-    // If READY start waiting for trajectory
-    case LocalPlannerState::READY:
-    {
-      state_ = LocalPlannerState::AWAIT_GLOBAL_TRAJECTORY;
-      break;
-    }
     // Wait for global solution to be published
     case LocalPlannerState::AWAIT_GLOBAL_TRAJECTORY:
       // Do nothing
@@ -238,7 +232,7 @@ void LocalPlannerComponent::executeIteration()
       timer_->cancel();
 
       // TODO(sjahr) add proper reset function
-      state_ = LocalPlannerState::READY;
+      state_ = LocalPlannerState::AWAIT_GLOBAL_TRAJECTORY;
       break;
     }
     // If the planner received an action request and a global solution it starts to plan locally
@@ -257,7 +251,7 @@ void LocalPlannerComponent::executeIteration()
       if (trajectory_operator_instance_->getTrajectoryProgress(current_robot_state) > PROGRESS_THRESHOLD)
       {
         local_planning_goal_handle_->succeed(result);
-        state_ = LocalPlannerState::READY;
+        state_ = LocalPlannerState::AWAIT_GLOBAL_TRAJECTORY;
         local_constraint_solver_instance_->reset();
         trajectory_operator_instance_->reset();
         timer_->cancel();
@@ -329,7 +323,7 @@ void LocalPlannerComponent::executeIteration()
       local_constraint_solver_instance_->reset();
       trajectory_operator_instance_->reset();
       RCLCPP_ERROR(LOGGER, "Local planner somehow failed :(");  // TODO(sjahr) Add more detailed failure information
-      state_ = LocalPlannerState::READY;
+      state_ = LocalPlannerState::AWAIT_GLOBAL_TRAJECTORY;
       break;
     }
   }

@@ -89,10 +89,9 @@ enum class LocalPlannerState : int8_t
 {
   ABORT = -1,
   ERROR = 0,
-  READY = 1,
-  UNCONFIGURED = 2,
-  AWAIT_GLOBAL_TRAJECTORY = 3,
-  LOCAL_PLANNING_ACTIVE = 4
+  UNCONFIGURED = 1,
+  AWAIT_GLOBAL_TRAJECTORY = 2,
+  LOCAL_PLANNING_ACTIVE = 3
 };
 
 /**

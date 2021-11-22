@@ -119,6 +119,11 @@ moveit_msgs::msg::MotionPlanResponse MoveItPlanningPipeline::plan(
 
   // Plan motion
   auto plan_solution = planning_components->plan(plan_params);
+  if (plan_solution.error_code != moveit_msgs::msg::MoveItErrorCodes::SUCCESS)
+  {
+    response.error_code = plan_solution.error_code;
+    return response;
+  }
 
   // Transform solution into MotionPlanResponse and publish it
   response.trajectory_start = plan_solution.start_state;

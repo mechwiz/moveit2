@@ -255,11 +255,6 @@ bool HybridPlanningManager::sendLocalPlannerAction()
   // Add result callback to print the result
   local_goal_options.result_callback =
       [this](const rclcpp_action::ClientGoalHandle<moveit_msgs::action::LocalPlanner>::WrappedResult& action_result) {
-        RCLCPP_ERROR(LOGGER, "local action callback");
-        RCLCPP_ERROR_STREAM(LOGGER, (bool)(action_result.code == rclcpp_action::ResultCode::SUCCEEDED));
-
-        // Note: action_result is not used beyond this point
-
         // Reaction result from the latest event
         ReactionResult reaction_result =
             planner_logic_instance_->react(HybridPlanningEvent::LOCAL_PLANNING_ACTION_FINISHED);

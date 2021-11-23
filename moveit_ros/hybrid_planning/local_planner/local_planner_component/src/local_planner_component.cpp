@@ -52,7 +52,8 @@ const rclcpp::Logger LOGGER = rclcpp::get_logger("local_planner_component");
 // If the trajectory progress reaches more than 0.X the global goal state is considered as reached
 constexpr float PROGRESS_THRESHOLD = 0.995;
 
-constexpr size_t MAX_STUCK_ITERATIONS = 5;
+// If stuck for this many iterations or more, abort the local planning action
+constexpr size_t STUCK_ITERATIONS_THRESHOLD = 10;
 }  // namespace
 
 LocalPlannerComponent::LocalPlannerComponent(const rclcpp::NodeOptions& options)
@@ -240,7 +241,7 @@ void LocalPlannerComponent::executeIteration()
     case LocalPlannerState::LOCAL_PLANNING_ACTIVE:
     {
       // Read current planning scene
-      planning_scene_monitor_->updateFrameTransforms();
+      planning_scene_monitor_->updateSceneWithCurrentState();
       planning_scene_monitor_->lockSceneRead();  // LOCK planning scene
       planning_scene::PlanningScenePtr planning_scene = planning_scene_monitor_->getPlanningScene();
       planning_scene_monitor_->unlockSceneRead();  // UNLOCK planning scene
@@ -273,9 +274,8 @@ void LocalPlannerComponent::executeIteration()
         prev_waypoint_idx_ = target_waypoint_idx;
         num_iterations_stuck_ = 0;
       }
-      if (num_iterations_stuck_ > MAX_STUCK_ITERATIONS)
+      if (num_iterations_stuck_ > STUCK_ITERATIONS_THRESHOLD)
       {
-        RCLCPP_ERROR(LOGGER, "STUCK!");
         result->error_code.val = moveit_msgs::msg::MoveItErrorCodes::FAILURE;
         result->error_message = "The local planner has been stuck for several iterations.";
         local_planning_goal_handle_->abort(result);

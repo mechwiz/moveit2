@@ -179,7 +179,7 @@ bool HybridPlanningManager::sendGlobalPlannerAction()
   global_goal_options.result_callback =
       [this](const rclcpp_action::ClientGoalHandle<moveit_msgs::action::GlobalPlanner>::WrappedResult& global_result) {
         // Reaction result from the latest event
-        if(global_result.code == rclcpp_action::ResultCode::SUCCEEDED)
+        if (global_result.code == rclcpp_action::ResultCode::SUCCEEDED)
         {
           ReactionResult reaction_result =
               planner_logic_instance_->react(HybridPlanningEvent::GLOBAL_PLANNING_ACTION_FINISHED);
@@ -192,7 +192,9 @@ bool HybridPlanningManager::sendGlobalPlannerAction()
             hybrid_planning_goal_handle_->abort(result);
             RCLCPP_ERROR(LOGGER, "Hybrid Planning Manager failed to react to  '%s'", reaction_result.event.c_str());
           }
-        } else {
+        }
+        else
+        {
           auto result = std::make_shared<moveit_msgs::action::HybridPlanner::Result>();
           result->error_code.val = moveit_msgs::msg::MoveItErrorCodes::PLANNING_FAILED;
           result->error_message = "Global planner failed to find a solution";
@@ -252,10 +254,16 @@ bool HybridPlanningManager::sendLocalPlannerAction()
 
   // Add result callback to print the result
   local_goal_options.result_callback =
-      [this](const rclcpp_action::ClientGoalHandle<moveit_msgs::action::LocalPlanner>::WrappedResult& result) {
+      [this](const rclcpp_action::ClientGoalHandle<moveit_msgs::action::LocalPlanner>::WrappedResult& action_result) {
+        RCLCPP_ERROR(LOGGER, "local action callback");
+        RCLCPP_ERROR_STREAM(LOGGER, (bool)(action_result.code == rclcpp_action::ResultCode::SUCCEEDED));
+
+        // Note: action_result is not used beyond this point
+
         // Reaction result from the latest event
         ReactionResult reaction_result =
             planner_logic_instance_->react(HybridPlanningEvent::LOCAL_PLANNING_ACTION_FINISHED);
+        // TODO: This always thinks the action was successful!
         if (reaction_result.error_code.val != moveit_msgs::msg::MoveItErrorCodes::SUCCESS)
         {
           auto result = std::make_shared<moveit_msgs::action::HybridPlanner::Result>();

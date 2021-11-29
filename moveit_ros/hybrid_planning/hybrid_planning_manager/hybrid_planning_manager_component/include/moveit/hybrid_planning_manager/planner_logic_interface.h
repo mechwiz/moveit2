@@ -56,15 +56,29 @@ struct ReactionResult
       case HybridPlanningEvent::HYBRID_PLANNING_REQUEST_RECEIVED:
         event = "Hybrid planning request received";
         break;
-      case HybridPlanningEvent::GLOBAL_PLANNING_ACTION_FINISHED:
-        event = "Global planning action finished";
+      case HybridPlanningEvent::GLOBAL_PLANNING_ACTION_SUCCESSFUL:
+        event = "Global planning action successful";
+        break;
+      case HybridPlanningEvent::GLOBAL_PLANNING_ACTION_ABORTED:
+        event = "Global planning action aborted";
+        break;
+      case HybridPlanningEvent::GLOBAL_PLANNING_ACTION_CANCELED:
+        event = "Global planning action canceled";
         break;
       case HybridPlanningEvent::GLOBAL_SOLUTION_AVAILABLE:
         event = "Global solution available";
         break;
-      case HybridPlanningEvent::LOCAL_PLANNING_ACTION_FINISHED:
-        event = "Local planning action finished";
+      case HybridPlanningEvent::LOCAL_PLANNING_ACTION_SUCCESSFUL:
+        event = "Local planning action successful";
         break;
+      case HybridPlanningEvent::LOCAL_PLANNING_ACTION_ABORTED:
+        event = "Local planning action aborted";
+        break;
+      case HybridPlanningEvent::LOCAL_PLANNING_ACTION_CANCELED:
+        event = "Local planning action canceled";
+        break;
+      case HybridPlanningEvent::UNDEFINED:
+        event = "Undefined event";
     }
   };
   ReactionResult(const std::string& event, const std::string& error_msg, const int& error_code)

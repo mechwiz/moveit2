@@ -47,10 +47,12 @@ namespace moveit_servo
 {
 namespace
 {
-double getVelocityScalingFactor(const moveit::core::JointModelGroup* joint_model_group, const Eigen::ArrayXd& velocity)
+double getVelocityScalingFactor(rclcpp::Node::SharedPtr node, const moveit::core::JointModelGroup* joint_model_group,
+                                const Eigen::ArrayXd& velocity)
 {
   std::size_t joint_delta_index{ 0 };
   double velocity_scaling_factor{ 1.0 };
+  std::string limiting_joint_name = "";
   for (const moveit::core::JointModel* joint : joint_model_group->getActiveJointModels())
   {
     const auto& bounds = joint->getVariableBounds(joint->getName());
@@ -59,9 +61,19 @@ double getVelocityScalingFactor(const moveit::core::JointModelGroup* joint_model
       const double unbounded_velocity = velocity(joint_delta_index);
       // Clamp each joint velocity to a joint specific [min_velocity, max_velocity] range.
       const auto bounded_velocity = std::min(std::max(unbounded_velocity, bounds.min_velocity_), bounds.max_velocity_);
-      velocity_scaling_factor = std::min(velocity_scaling_factor, bounded_velocity / unbounded_velocity);
+      double this_joint_velocity_scaling = bounded_velocity / unbounded_velocity;
+      if (this_joint_velocity_scaling < velocity_scaling_factor)
+      {
+        velocity_scaling_factor = this_joint_velocity_scaling;
+        limiting_joint_name = joint->getName();
+      }
     }
     ++joint_delta_index;
+  }
+  if (velocity_scaling_factor < 1)
+  {
+    RCLCPP_WARN_STREAM_THROTTLE(node->get_logger(), *node->get_clock(), 1000 /*ms*/,
+                                "Joint velocity is limited by joint " << limiting_joint_name);
   }
 
   return velocity_scaling_factor;
@@ -69,13 +81,13 @@ double getVelocityScalingFactor(const moveit::core::JointModelGroup* joint_model
 
 }  // namespace
 
-void enforceVelocityLimits(const moveit::core::JointModelGroup* joint_model_group, const double publish_period,
-                           sensor_msgs::msg::JointState& joint_state)
+void enforceVelocityLimits(const rclcpp::Node::SharedPtr node, const moveit::core::JointModelGroup* joint_model_group,
+                           const double publish_period, sensor_msgs::msg::JointState& joint_state)
 {
   // Get the velocity scaling factor
   Eigen::ArrayXd velocity =
       Eigen::Map<Eigen::ArrayXd, Eigen::Unaligned>(joint_state.velocity.data(), joint_state.velocity.size());
-  double velocity_scaling_factor = getVelocityScalingFactor(joint_model_group, velocity);
+  double velocity_scaling_factor = getVelocityScalingFactor(node, joint_model_group, velocity);
 
   // Take a smaller step if the velocity scaling factor is less than 1
   if (velocity_scaling_factor < 1)

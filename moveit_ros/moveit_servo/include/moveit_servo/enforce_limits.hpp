@@ -50,7 +50,7 @@ namespace moveit_servo
  * @param joint_model_group Active joint group. Used to retrieve limits.
  * @param joint_state The command that will go to the robot.
  */
-void enforceVelocityLimits(const moveit::core::JointModelGroup* joint_model_group, const double publish_period,
-                           sensor_msgs::msg::JointState& joint_state);
+void enforceVelocityLimits(const rclcpp::Node::SharedPtr node, const moveit::core::JointModelGroup* joint_model_group,
+                           const double publish_period, sensor_msgs::msg::JointState& joint_state);
 
 }  // namespace moveit_servo

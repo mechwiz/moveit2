@@ -65,12 +65,14 @@ class EnforceLimitsTests : public testing::Test
 protected:
   void SetUp() override
   {
+    node_ = std::make_shared<rclcpp::Node>("enforce_limits_test");
     robot_model_ = moveit::core::loadTestingRobotModel("panda");
     joint_model_group_ = robot_model_->getJointModelGroup("panda_arm");
   }
 
   moveit::core::RobotModelPtr robot_model_;
   const moveit::core::JointModelGroup* joint_model_group_;
+  std::shared_ptr<rclcpp::Node> node_;
 };
 
 }  // namespace
@@ -82,7 +84,7 @@ TEST_F(EnforceLimitsTests, VelocityScalingTest)
   sensor_msgs::msg::JointState joint_state;
   joint_state.velocity = joint_velocity;
 
-  moveit_servo::enforceVelocityLimits(joint_model_group_, PUBLISH_PERIOD, joint_state);
+  moveit_servo::enforceVelocityLimits(node_, joint_model_group_, PUBLISH_PERIOD, joint_state);
 
   Eigen::ArrayXd eigen_velocity =
       Eigen::Map<Eigen::ArrayXd, Eigen::Unaligned>(joint_state.velocity.data(), joint_state.velocity.size());
@@ -96,7 +98,7 @@ TEST_F(EnforceLimitsTests, NegativeJointAngleDeltasTest)
   sensor_msgs::msg::JointState joint_state;
   joint_state.velocity = joint_velocity;
 
-  moveit_servo::enforceVelocityLimits(joint_model_group_, PUBLISH_PERIOD, joint_state);
+  moveit_servo::enforceVelocityLimits(node_, joint_model_group_, PUBLISH_PERIOD, joint_state);
 
   Eigen::ArrayXd eigen_velocity =
       Eigen::Map<Eigen::ArrayXd, Eigen::Unaligned>(joint_state.velocity.data(), joint_state.velocity.size());
@@ -110,7 +112,7 @@ TEST_F(EnforceLimitsTests, LowJointVelocityDeltaTest)
   sensor_msgs::msg::JointState joint_state;
   joint_state.velocity = joint_velocity;
 
-  moveit_servo::enforceVelocityLimits(joint_model_group_, PUBLISH_PERIOD, joint_state);
+  moveit_servo::enforceVelocityLimits(node_, joint_model_group_, PUBLISH_PERIOD, joint_state);
 
   Eigen::ArrayXd eigen_velocity =
       Eigen::Map<Eigen::ArrayXd, Eigen::Unaligned>(joint_state.velocity.data(), joint_state.velocity.size());

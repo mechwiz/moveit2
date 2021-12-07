@@ -155,8 +155,7 @@ def generate_launch_description():
 
     # Optional latency monitor
     # Upon exiting, this node will print a latency estimate to screen.
-    # It can be used to adjust the "system_latency_compensation" Servo parameter.
-    # Currently compatible only when Servo publishes std_msgs/Float64MultiArray position commands.
+    # It can be used as a starting point for the "system_latency_compensation" Servo parameter.
     latency_monitor_node = Node(
         package="moveit_servo",
         executable="latency_monitor",

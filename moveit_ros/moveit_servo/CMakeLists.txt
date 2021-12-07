@@ -142,6 +142,7 @@ ament_target_dependencies(${FAKE_SERVO_CMDS_NAME}
 add_executable(${LATENCY_MONITOR_NAME} src/latency_monitor.cpp)
 ament_target_dependencies(${LATENCY_MONITOR_NAME}
   Eigen3
+  geometry_msgs
   rclcpp
   std_msgs
   tf2_ros

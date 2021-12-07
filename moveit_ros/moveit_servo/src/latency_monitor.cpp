@@ -53,20 +53,20 @@ namespace moveit_servo
 namespace
 {
 static const std::string PARAMETER_NS = "moveit_servo";
+static const std::string SERVO_TWIST_COMMAND_TOPIC = "/servo_node/delta_twist_cmds";
 static const std::string WORLD_FRAME = "world";
 }  // namespace
 
 class LatencyMonitor : public rclcpp::Node
 {
 public:
-  LatencyMonitor() : Node("latency_monitor"), running_average_latency_(0), num_samples_(0)
+  LatencyMonitor() : Node("latency_monitor"), running_average_latency_(0), num_samples_(0), first_iteration_(true)
   {
     this->declare_parameter<double>(PARAMETER_NS + ".publish_period");
     this->get_parameter<double>(PARAMETER_NS + ".publish_period", servo_period_);
     this->declare_parameter<std::string>(PARAMETER_NS + ".ee_frame_name");
     this->get_parameter<std::string>(PARAMETER_NS + ".ee_frame_name", ee_frame_name_);
     this->declare_parameter<std::string>(PARAMETER_NS + ".cartesian_command_in_topic");
-    this->get_parameter<std::string>(PARAMETER_NS + ".cartesian_command_in_topic", twist_command_to_servo_topic_);
 
     timer_ = this->create_wall_timer(std::chrono::duration<double>(servo_period_),
                                      std::bind(&LatencyMonitor::timer_callback, this));
@@ -74,12 +74,11 @@ public:
     tf_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_clock());
     transform_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
-    // Subscribe to latest to Servo
+    // Subscribe to twist publications to Servo
     servo_command_sub_ = this->create_subscription<geometry_msgs::msg::TwistStamped>(
-        twist_command_to_servo_topic_, rclcpp::SystemDefaultsQoS(),
-        [this](geometry_msgs::msg::TwistStamped::UniquePtr msg) {
-          RCLCPP_INFO_STREAM(this->get_logger(), "I heard a joint command");
+        SERVO_TWIST_COMMAND_TOPIC, rclcpp::SystemDefaultsQoS(), [this](geometry_msgs::msg::TwistStamped::UniquePtr msg) {
           latest_twist_cmd_to_servo_ = *msg;
+          required_data_.have_latest_twist_cmd = true;
         });
 
     // Subscribe to Servo status. We only run the calculations if Servo is in perfect operating condition
@@ -87,6 +86,7 @@ public:
     servo_status_sub_ = this->create_subscription<std_msgs::msg::Int8>("servo_node/status", rclcpp::SystemDefaultsQoS(),
                                                                        [this](std_msgs::msg::Int8::UniquePtr msg) {
                                                                          latest_servo_status_ = *msg;
+                                                                         required_data_.have_servo_status = true;
                                                                        });
   }
 
@@ -109,13 +109,20 @@ private:
     latest_ee_position_[1] = transform_stamped.transform.translation.y;
     latest_ee_position_[2] = transform_stamped.transform.translation.z;
 
-    // Get expected robot position from Servo commands
+    // Get expected change in robot position from Servo commands
+    Eigen::Vector3d commanded_velocity;
+    commanded_velocity[0] = latest_twist_cmd_to_servo_.twist.linear.x;
+    commanded_velocity[1] = latest_twist_cmd_to_servo_.twist.linear.y;
+    commanded_velocity[2] = latest_twist_cmd_to_servo_.twist.linear.z;
+    Eigen::Vector3d commanded_change_in_robot_position = commanded_velocity * servo_period_;
 
     // We only run the latency calculations if Servo is in perfect operating condition
     // (not near singularity, collision, or joint limit)
-    if (latest_servo_status_.data == 0)
+    if (required_data_.haveAllData() && latest_servo_status_.data == 0)
     {
       ++num_samples_;
+
+      Eigen::Vector3d actual_change_in_robot_position = latest_ee_position_ - prev_ee_position_;
 
       // Calculate a running average latency
 
@@ -124,8 +131,32 @@ private:
       // delta_x_cmd = servo_period * velocity_command
       // delta_x_cmd - delta_x_actual = latency * velocity_command
       // -->  latency = (delta_x_cmd - delta_x_actual) / velocity_command
+
+      // This is a vector of latency estimates for X/Y/Z position
+      // It is possible for some of these elements to be nan because of divide-by-zero
+      Eigen::Vector3d latency_this_iteration = (commanded_change_in_robot_position - actual_change_in_robot_position)
+                                                   .cwiseProduct(commanded_velocity.cwiseInverse());
+
+      auto eigen_temp = latency_this_iteration.array().isNaN();
+
+      running_average_latency_ += (eigen_temp.sum() / eigen_temp.size()) / num_samples_;
+      RCLCPP_INFO_STREAM(this->get_logger(), "Latency: \n" << running_average_latency_);
     }
+
+    prev_ee_position_ = latest_ee_position_;
   }
+
+  // We need all of this data before we can do calculations
+  struct RequiredData
+  {
+    bool have_latest_twist_cmd = false;
+    bool have_servo_status = false;
+
+    bool haveAllData()
+    {
+      return have_latest_twist_cmd && have_servo_status;
+    }
+  } required_data_;
 
   rclcpp::TimerBase::SharedPtr timer_;
   rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr servo_command_sub_;
@@ -133,10 +164,12 @@ private:
 
   // For now, we only track end-effector position
   Eigen::Vector3d latest_ee_position_;
+  Eigen::Vector3d prev_ee_position_;
   std_msgs::msg::Int8 latest_servo_status_;
   geometry_msgs::msg::TwistStamped latest_twist_cmd_to_servo_;
   double running_average_latency_;
   size_t num_samples_;
+  bool first_iteration_;
 
   std::shared_ptr<tf2_ros::TransformListener> transform_listener_{ nullptr };
   std::unique_ptr<tf2_ros::Buffer> tf_buffer_;
@@ -144,7 +177,6 @@ private:
   // Parameters
   double servo_period_;
   std::string ee_frame_name_;
-  std::string twist_command_to_servo_topic_;
 };
 }  // namespace moveit_servo
 

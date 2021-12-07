@@ -153,6 +153,23 @@ def generate_launch_description():
         },
     )
 
+    # Optional latency monitor
+    # Upon exiting, this node will print a latency estimate to screen.
+    # It can be used to adjust the "system_latency_compensation" Servo parameter.
+    # Currently compatible only when Servo publishes std_msgs/Float64MultiArray position commands.
+    latency_monitor_node = Node(
+        package="moveit_servo",
+        executable="latency_monitor",
+        parameters=[
+            servo_params,
+        ],
+        output={
+            "stdout": "screen",
+            "stderr": "screen",
+        },
+    )
+
     return LaunchDescription(
-        [rviz_node, ros2_control_node, servo_node, container] + load_controllers
+        [rviz_node, ros2_control_node, servo_node, container, latency_monitor_node]
+        + load_controllers
     )

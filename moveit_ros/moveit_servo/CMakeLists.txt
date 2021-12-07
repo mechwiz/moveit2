@@ -23,6 +23,7 @@ set(SERVO_CONTROLLER_INPUT servo_controller_input)
 set(SERVO_NODE_MAIN_NAME servo_node_main)
 set(POSE_TRACKING_DEMO_NAME servo_pose_tracking_demo)
 set(FAKE_SERVO_CMDS_NAME fake_command_publisher)
+set(LATENCY_MONITOR_NAME latency_monitor)
 
 #################################################################
 
@@ -44,6 +45,7 @@ find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(tf2_eigen REQUIRED)
+find_package(tf2_ros REQUIRED)
 find_package(trajectory_msgs REQUIRED)
 
 find_package(eigen3_cmake_module REQUIRED)
@@ -135,6 +137,16 @@ ament_target_dependencies(${FAKE_SERVO_CMDS_NAME}
   std_srvs
 )
 
+# Optionally monitor outgoing commands vs actual robot position and calculate a suggested latency
+# compensation parameter
+add_executable(${LATENCY_MONITOR_NAME} src/latency_monitor.cpp)
+ament_target_dependencies(${LATENCY_MONITOR_NAME}
+  Eigen3
+  rclcpp
+  std_msgs
+  tf2_ros
+)
+
 #############
 ## Install ##
 #############
@@ -161,6 +173,7 @@ install(
     ${CPP_DEMO_NAME}
     ${POSE_TRACKING_DEMO_NAME}
     ${FAKE_SERVO_CMDS_NAME}
+    ${LATENCY_MONITOR_NAME}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}

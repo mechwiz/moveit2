@@ -131,10 +131,7 @@ bool HybridPlanningManager::initialize()
         RCLCPP_INFO(LOGGER, "Received goal request");
         return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
       },
-      [](const std::shared_ptr<rclcpp_action::ServerGoalHandle<moveit_msgs::action::HybridPlanner>>& /*unused*/) {
-        RCLCPP_INFO(LOGGER, "Received request to cancel goal");
-        return rclcpp_action::CancelResponse::ACCEPT;
-      },
+      std::bind(&HybridPlanningManager::hybridPlanningCancelCallback, this, std::placeholders::_1),
       std::bind(&HybridPlanningManager::hybridPlanningRequestCallback, this, std::placeholders::_1));
 
   // Initialize global solution subscriber
@@ -311,6 +308,13 @@ void HybridPlanningManager::hybridPlanningRequestCallback(
     hybrid_planning_goal_handle_->abort(result);
     RCLCPP_ERROR(LOGGER, "Hybrid Planning Manager failed to react to  '%s'", reaction_result.event.c_str());
   }
+}
+
+rclcpp_action::CancelResponse HybridPlanningManager::hybridPlanningCancelCallback(
+    std::shared_ptr<rclcpp_action::ServerGoalHandle<moveit_msgs::action::HybridPlanner>> goal_handle)
+{
+  RCLCPP_INFO(LOGGER, "Received request to cancel goal");
+  return rclcpp_action::CancelResponse::ACCEPT;
 }
 
 void HybridPlanningManager::sendHybridPlanningResponse(bool success)

@@ -114,6 +114,13 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 
   # Basic launch test
+#  add_ros_test(test/launch/test_basic_integration.test.py TIMEOUT 120 ARGS "test_binary_dir:=${CMAKE_CURRENT_BINARY_DIR}")
+
+  # Basic integration tests
+  ament_add_gtest_executable(test_basic_integration
+      test/test_basic_integration.cpp
+  )
+  ament_target_dependencies(test_basic_integration ${THIS_PACKAGE_INCLUDE_DEPENDS})
   add_ros_test(test/launch/test_basic_integration.test.py TIMEOUT 120 ARGS "test_binary_dir:=${CMAKE_CURRENT_BINARY_DIR}")
 
 endif()

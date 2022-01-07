@@ -38,6 +38,11 @@
 
 #include <gtest/gtest.h>
 #include <rclcpp/rclcpp.hpp>
+#include <rclcpp_action/rclcpp_action.hpp>
+
+#include <moveit_msgs/action/hybrid_planner.hpp>
+#include <moveit_msgs/msg/display_robot_state.hpp>
+#include <moveit_msgs/msg/motion_plan_response.hpp>
 
 namespace moveit_hybrid_planning
 {
@@ -61,6 +66,15 @@ public:
       RCLCPP_ERROR(node_->get_logger(), "hybrid_planning_action_name parameter was not defined");
       std::exit(EXIT_FAILURE);
     }
+
+    hp_action_client_ =
+        rclcpp_action::create_client<moveit_msgs::action::HybridPlanner>(node_, hybrid_planning_action_name);
+    robot_state_publisher_ = node_->create_publisher<moveit_msgs::msg::DisplayRobotState>("display_robot_state", 1);
+
+    // Add new collision object as soon as global trajectory is available.
+    global_solution_subscriber_ = node_->create_subscription<moveit_msgs::msg::MotionPlanResponse>(
+        "global_trajectory", rclcpp::SystemDefaultsQoS(),
+        [this](const moveit_msgs::msg::MotionPlanResponse::SharedPtr msg) {});
   }
 
   void TearDown() override
@@ -69,6 +83,9 @@ public:
 
 protected:
   rclcpp::Node::SharedPtr node_;
+  rclcpp_action::Client<moveit_msgs::action::HybridPlanner>::SharedPtr hp_action_client_;
+  rclcpp::Publisher<moveit_msgs::msg::DisplayRobotState>::SharedPtr robot_state_publisher_;
+  rclcpp::Subscription<moveit_msgs::msg::MotionPlanResponse>::SharedPtr global_solution_subscriber_;
 };  // class HybridPlanningFixture
 
 // Make a hybrid planning request and verify it completes

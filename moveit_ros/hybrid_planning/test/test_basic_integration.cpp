@@ -37,8 +37,10 @@
 */
 
 #include <gtest/gtest.h>
+#include <moveit/planning_scene_monitor/planning_scene_monitor.h>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_action/rclcpp_action.hpp>
+#include <tf2_ros/buffer.h>
 
 #include <moveit_msgs/action/hybrid_planner.hpp>
 #include <moveit_msgs/msg/display_robot_state.hpp>
@@ -46,6 +48,8 @@
 
 namespace moveit_hybrid_planning
 {
+using namespace std::chrono_literals;
+
 class HybridPlanningFixture : public ::testing::Test
 {
 public:
@@ -75,6 +79,38 @@ public:
     global_solution_subscriber_ = node_->create_subscription<moveit_msgs::msg::MotionPlanResponse>(
         "global_trajectory", rclcpp::SystemDefaultsQoS(),
         [this](const moveit_msgs::msg::MotionPlanResponse::SharedPtr msg) {});
+
+    RCLCPP_INFO(node_->get_logger(), "Initialize Planning Scene Monitor");
+    tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
+
+    planning_scene_monitor_ = std::make_shared<planning_scene_monitor::PlanningSceneMonitor>(
+        node_, "robot_description", tf_buffer_, "planning_scene_monitor");
+    if (!planning_scene_monitor_->getPlanningScene())
+    {
+      RCLCPP_ERROR(node_->get_logger(), "The planning scene was not retrieved!");
+      std::exit(EXIT_FAILURE);
+    }
+    else
+    {
+      planning_scene_monitor_->startStateMonitor();
+      planning_scene_monitor_->providePlanningSceneService();  // let RViz display query PlanningScene
+      planning_scene_monitor_->setPlanningScenePublishingFrequency(100);
+      planning_scene_monitor_->startPublishingPlanningScene(planning_scene_monitor::PlanningSceneMonitor::UPDATE_SCENE,
+                                                            "/planning_scene");
+      planning_scene_monitor_->startSceneMonitor();
+    }
+
+    if (!planning_scene_monitor_->waitForCurrentRobotState(node_->now(), 5))
+    {
+      RCLCPP_ERROR(node_->get_logger(), "Timeout when waiting for /joint_states updates. Is the robot running?");
+      std::exit(EXIT_FAILURE);
+    }
+
+    if (!hp_action_client_->wait_for_action_server(20s))
+    {
+      RCLCPP_ERROR(node_->get_logger(), "Hybrid planning action server not available after waiting");
+      std::exit(EXIT_FAILURE);
+    }
   }
 
   void TearDown() override
@@ -86,6 +122,8 @@ protected:
   rclcpp_action::Client<moveit_msgs::action::HybridPlanner>::SharedPtr hp_action_client_;
   rclcpp::Publisher<moveit_msgs::msg::DisplayRobotState>::SharedPtr robot_state_publisher_;
   rclcpp::Subscription<moveit_msgs::msg::MotionPlanResponse>::SharedPtr global_solution_subscriber_;
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+  planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor_;
 };  // class HybridPlanningFixture
 
 // Make a hybrid planning request and verify it completes

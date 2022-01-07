@@ -37,7 +37,9 @@
 */
 
 #include <gtest/gtest.h>
+#include <moveit/kinematic_constraints/utils.h>
 #include <moveit/planning_scene_monitor/planning_scene_monitor.h>
+#include <moveit/robot_state/conversions.h>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_action/rclcpp_action.hpp>
 #include <tf2_ros/buffer.h>
@@ -59,6 +61,8 @@ public:
 
   HybridPlanningFixture() : node_(std::make_shared<rclcpp::Node>("hybrid_planning_testing"))
   {
+    action_successful_ = false;
+
     std::string hybrid_planning_action_name = "";
     node_->declare_parameter("hybrid_planning_action_name", "");
     if (node_->has_parameter("hybrid_planning_action_name"))
@@ -111,6 +115,80 @@ public:
       RCLCPP_ERROR(node_->get_logger(), "Hybrid planning action server not available after waiting");
       std::exit(EXIT_FAILURE);
     }
+
+    // Setup motion planning goal taken from motion_planning_api tutorial
+    const std::string planning_group = "panda_arm";
+    robot_model_loader::RobotModelLoader robot_model_loader(node_, "robot_description");
+    const moveit::core::RobotModelPtr& robot_model = robot_model_loader.getModel();
+
+    // Create a RobotState and JointModelGroup
+    const auto robot_state = std::make_shared<moveit::core::RobotState>(robot_model);
+    const moveit::core::JointModelGroup* joint_model_group = robot_state->getJointModelGroup(planning_group);
+
+    // Configure a valid robot state
+    robot_state->setToDefaultValues(joint_model_group, "ready");
+
+    // Create desired motion goal
+    moveit_msgs::msg::MotionPlanRequest goal_motion_request;
+
+    moveit::core::robotStateToRobotStateMsg(*robot_state, goal_motion_request.start_state);
+    goal_motion_request.group_name = planning_group;
+    goal_motion_request.num_planning_attempts = 10;
+    goal_motion_request.max_velocity_scaling_factor = 0.1;
+    goal_motion_request.max_acceleration_scaling_factor = 0.1;
+    goal_motion_request.allowed_planning_time = 2.0;
+    goal_motion_request.planner_id = "ompl";
+    goal_motion_request.pipeline_id = "ompl";
+
+    moveit::core::RobotState goal_state(robot_model);
+    std::vector<double> joint_values = { 0.0, 0.0, 0.0, 0.0, 0.0, 1.571, 0.785 };
+    goal_state.setJointGroupPositions(joint_model_group, joint_values);
+
+    goal_motion_request.goal_constraints.resize(1);
+    goal_motion_request.goal_constraints[0] =
+        kinematic_constraints::constructGoalConstraints(goal_state, joint_model_group);
+
+    // Create Hybrid Planning action request
+    moveit_msgs::msg::MotionSequenceItem sequence_item;
+    sequence_item.req = goal_motion_request;
+    sequence_item.blend_radius = 0.0;  // Single goal
+
+    moveit_msgs::msg::MotionSequenceRequest sequence_request;
+    sequence_request.items.push_back(sequence_item);
+
+    auto goal_action_request = moveit_msgs::action::HybridPlanner::Goal();
+    goal_action_request.planning_group = planning_group;
+    goal_action_request.motion_sequence = sequence_request;
+
+    auto send_goal_options = rclcpp_action::Client<moveit_msgs::action::HybridPlanner>::SendGoalOptions();
+    send_goal_options.result_callback =
+        [this](const rclcpp_action::ClientGoalHandle<moveit_msgs::action::HybridPlanner>::WrappedResult& result) {
+          switch (result.code)
+          {
+            case rclcpp_action::ResultCode::SUCCEEDED:
+              RCLCPP_INFO(node_->get_logger(), "Hybrid planning goal succeeded");
+              action_successful_ = true;
+              break;
+            case rclcpp_action::ResultCode::ABORTED:
+              RCLCPP_ERROR(node_->get_logger(), "Hybrid planning goal was aborted");
+              return;
+            case rclcpp_action::ResultCode::CANCELED:
+              RCLCPP_ERROR(node_->get_logger(), "Hybrid planning goal was canceled");
+              return;
+            default:
+              RCLCPP_ERROR(node_->get_logger(), "Unknown hybrid planning result code");
+              return;
+              RCLCPP_INFO(node_->get_logger(), "Hybrid planning result received");
+          }
+        };
+    send_goal_options.feedback_callback =
+        [this](rclcpp_action::ClientGoalHandle<moveit_msgs::action::HybridPlanner>::SharedPtr /*unused*/,
+               const std::shared_ptr<const moveit_msgs::action::HybridPlanner::Feedback> feedback) {
+          RCLCPP_INFO(node_->get_logger(), feedback->feedback.c_str());
+        };
+
+    // Send the goal
+    auto goal_handle_future = hp_action_client_->async_send_goal(goal_action_request, send_goal_options);
   }
 
   void TearDown() override
@@ -124,12 +202,13 @@ protected:
   rclcpp::Subscription<moveit_msgs::msg::MotionPlanResponse>::SharedPtr global_solution_subscriber_;
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor_;
+  std::atomic_bool action_successful_;
 };  // class HybridPlanningFixture
 
 // Make a hybrid planning request and verify it completes
 TEST_F(HybridPlanningFixture, ActionCompletion)
 {
-  ASSERT_TRUE(true);
+  ASSERT_TRUE(action_successful_);
 }
 }  // namespace moveit_hybrid_planning
 

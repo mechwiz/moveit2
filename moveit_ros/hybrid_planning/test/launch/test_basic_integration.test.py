@@ -4,7 +4,7 @@ import sys
 import unittest
 
 from launch import LaunchDescription
-from launch.actions import ExecuteProcess, TimerAction
+from launch.actions import DeclareLaunchArgument, ExecuteProcess, TimerAction
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
 
@@ -31,13 +31,21 @@ def generate_test_description():
         parameters=[],
         output="screen",
     )
+
     return LaunchDescription(
-        common_launch
-        + [
+        [
+            DeclareLaunchArgument(
+                name="test_binary_dir",
+                description="Binary directory of package "
+                "containing test executables",
+            ),
             TimerAction(period=2.0, actions=[hybrid_planning_gtest]),
             launch_testing.actions.ReadyToTest(),
         ]
-    )
+        + common_launch
+    ), {
+        "hybrid_planning_gtest": hybrid_planning_gtest,
+    }
 
 
 class TestGTestWaitForCompletion(unittest.TestCase):

@@ -50,6 +50,17 @@ public:
 
   HybridPlanningFixture() : node_(std::make_shared<rclcpp::Node>("hybrid_planning_testing"))
   {
+    std::string hybrid_planning_action_name = "";
+    node_->declare_parameter("hybrid_planning_action_name", "");
+    if (node_->has_parameter("hybrid_planning_action_name"))
+    {
+      node_->get_parameter<std::string>("hybrid_planning_action_name", hybrid_planning_action_name);
+    }
+    else
+    {
+      RCLCPP_ERROR(node_->get_logger(), "hybrid_planning_action_name parameter was not defined");
+      std::exit(EXIT_FAILURE);
+    }
   }
 
   void TearDown() override
@@ -60,6 +71,7 @@ protected:
   rclcpp::Node::SharedPtr node_;
 };  // class HybridPlanningFixture
 
+// Make a hybrid planning request and verify it completes
 TEST_F(HybridPlanningFixture, ActionCompletion)
 {
   ASSERT_TRUE(true);

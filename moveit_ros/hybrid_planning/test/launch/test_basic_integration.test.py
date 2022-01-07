@@ -24,11 +24,19 @@ def generate_test_description():
     robot_description = get_robot_description()
     robot_description_semantic = get_robot_description_semantic()
 
+    common_hybrid_planning_param = load_yaml(
+        "moveit_hybrid_planning", "config/common_hybrid_planning_params.yaml"
+    )
+
     hybrid_planning_gtest = Node(
         executable=PathJoinSubstitution(
             [LaunchConfiguration("test_binary_dir"), "test_basic_integration"]
         ),
-        parameters=[],
+        parameters=[
+            robot_description,
+            robot_description_semantic,
+            common_hybrid_planning_param,
+        ],
         output="screen",
     )
 

@@ -156,18 +156,18 @@ public:
     moveit_msgs::msg::MotionSequenceRequest sequence_request;
     sequence_request.items.push_back(sequence_item);
 
-    auto goal_action_request = moveit_msgs::action::HybridPlanner::Goal();
-    goal_action_request.planning_group = planning_group;
-    goal_action_request.motion_sequence = sequence_request;
+    goal_action_request_ = moveit_msgs::action::HybridPlanner::Goal();
+    goal_action_request_.planning_group = planning_group;
+    goal_action_request_.motion_sequence = sequence_request;
 
-    auto send_goal_options = rclcpp_action::Client<moveit_msgs::action::HybridPlanner>::SendGoalOptions();
-    send_goal_options.result_callback =
+    send_goal_options_ = rclcpp_action::Client<moveit_msgs::action::HybridPlanner>::SendGoalOptions();
+    send_goal_options_.result_callback =
         [this](const rclcpp_action::ClientGoalHandle<moveit_msgs::action::HybridPlanner>::WrappedResult& result) {
           switch (result.code)
           {
             case rclcpp_action::ResultCode::SUCCEEDED:
-              RCLCPP_INFO(node_->get_logger(), "Hybrid planning goal succeeded");
               action_successful_ = true;
+              RCLCPP_INFO(node_->get_logger(), "Hybrid planning goal succeeded");
               break;
             case rclcpp_action::ResultCode::ABORTED:
               RCLCPP_ERROR(node_->get_logger(), "Hybrid planning goal was aborted");
@@ -181,14 +181,11 @@ public:
               RCLCPP_INFO(node_->get_logger(), "Hybrid planning result received");
           }
         };
-    send_goal_options.feedback_callback =
+    send_goal_options_.feedback_callback =
         [this](rclcpp_action::ClientGoalHandle<moveit_msgs::action::HybridPlanner>::SharedPtr /*unused*/,
                const std::shared_ptr<const moveit_msgs::action::HybridPlanner::Feedback> feedback) {
           RCLCPP_INFO(node_->get_logger(), feedback->feedback.c_str());
         };
-
-    // Send the goal
-    auto goal_handle_future = hp_action_client_->async_send_goal(goal_action_request, send_goal_options);
   }
 
   void TearDown() override
@@ -203,11 +200,21 @@ protected:
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor_;
   std::atomic_bool action_successful_;
+
+  // Action request
+  moveit_msgs::action::HybridPlanner::Goal goal_action_request_;
+  rclcpp_action::Client<moveit_msgs::action::HybridPlanner>::SendGoalOptions send_goal_options_;
 };  // class HybridPlanningFixture
 
 // Make a hybrid planning request and verify it completes
 TEST_F(HybridPlanningFixture, ActionCompletion)
 {
+  // Send the goal
+  auto goal_handle_future = hp_action_client_->async_send_goal(goal_action_request_, send_goal_options_);
+
+  // Wait for the action to finish
+  auto result = hp_action_client_->async_get_result(goal_handle_future.get());
+
   ASSERT_TRUE(action_successful_);
 }
 }  // namespace moveit_hybrid_planning

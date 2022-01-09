@@ -220,22 +220,15 @@ TEST_F(HybridPlanningFixture, ActionCompletion)
 
     // Send the goal
     auto goal_handle_future = hp_action_client_->async_send_goal(goal_action_request_, send_goal_options_);
-
-    // Wait for the action to finish
-    //    auto result = hp_action_client_->async_get_result(goal_handle_future.get());
   });
 
-  std::cout << "Beginning to spin!" << std::endl;
-  //  executor_.spin();
   rclcpp::Rate rate(10);
   while (!action_complete_)
   {
     executor_.spin_once();
     rate.sleep();
   }
-  std::cout << "Done spinning. Joining thread" << std::endl;
   run_thread.join();
-  std::cout << "Done joining thread" << std::endl;
   ASSERT_TRUE(action_successful_);
 }
 }  // namespace moveit_hybrid_planning

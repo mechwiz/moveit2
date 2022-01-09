@@ -18,9 +18,6 @@ if(BUILD_TESTING)
   # Run all lint tests in package.xml except those listed above
   ament_lint_auto_find_test_dependencies()
 
-  # Basic launch test
-#  add_ros_test(test/launch/test_basic_integration.test.py TIMEOUT 120 ARGS "test_binary_dir:=${CMAKE_CURRENT_BINARY_DIR}")
-
   # Basic integration tests
   ament_add_gtest_executable(test_basic_integration
       test_basic_integration.cpp

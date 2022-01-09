@@ -61,7 +61,9 @@ public:
 
   HybridPlanningFixture() : node_(std::make_shared<rclcpp::Node>("hybrid_planning_testing"))
   {
+    executor_.add_node(node_);
     action_successful_ = false;
+    action_complete_ = false;
 
     std::string hybrid_planning_action_name = "";
     node_->declare_parameter("hybrid_planning_action_name", "");
@@ -171,15 +173,16 @@ public:
               break;
             case rclcpp_action::ResultCode::ABORTED:
               RCLCPP_ERROR(node_->get_logger(), "Hybrid planning goal was aborted");
-              return;
+              break;
             case rclcpp_action::ResultCode::CANCELED:
               RCLCPP_ERROR(node_->get_logger(), "Hybrid planning goal was canceled");
-              return;
+              break;
             default:
               RCLCPP_ERROR(node_->get_logger(), "Unknown hybrid planning result code");
-              return;
-              RCLCPP_INFO(node_->get_logger(), "Hybrid planning result received");
+              break;
           }
+          action_complete_ = true;
+          return;
         };
     send_goal_options_.feedback_callback =
         [this](rclcpp_action::ClientGoalHandle<moveit_msgs::action::HybridPlanner>::SharedPtr /*unused*/,
@@ -192,6 +195,8 @@ public:
   {
   }
 
+  rclcpp::executors::MultiThreadedExecutor executor_;
+
 protected:
   rclcpp::Node::SharedPtr node_;
   rclcpp_action::Client<moveit_msgs::action::HybridPlanner>::SharedPtr hp_action_client_;
@@ -200,6 +205,7 @@ protected:
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor_;
   std::atomic_bool action_successful_;
+  std::atomic_bool action_complete_;
 
   // Action request
   moveit_msgs::action::HybridPlanner::Goal goal_action_request_;
@@ -219,9 +225,17 @@ TEST_F(HybridPlanningFixture, ActionCompletion)
     //    auto result = hp_action_client_->async_get_result(goal_handle_future.get());
   });
 
-  rclcpp::spin(node_);
+  std::cout << "Beginning to spin!" << std::endl;
+  //  executor_.spin();
+  rclcpp::Rate rate(10);
+  while (!action_complete_)
+  {
+    executor_.spin_once();
+    rate.sleep();
+  }
+  std::cout << "Done spinning. Joining thread" << std::endl;
   run_thread.join();
-
+  std::cout << "Done joining thread" << std::endl;
   ASSERT_TRUE(action_successful_);
 }
 }  // namespace moveit_hybrid_planning

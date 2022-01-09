@@ -209,11 +209,18 @@ protected:
 // Make a hybrid planning request and verify it completes
 TEST_F(HybridPlanningFixture, ActionCompletion)
 {
-  // Send the goal
-  auto goal_handle_future = hp_action_client_->async_send_goal(goal_action_request_, send_goal_options_);
+  std::thread run_thread([this]() {
+    rclcpp::sleep_for(5s);
 
-  // Wait for the action to finish
-  auto result = hp_action_client_->async_get_result(goal_handle_future.get());
+    // Send the goal
+    auto goal_handle_future = hp_action_client_->async_send_goal(goal_action_request_, send_goal_options_);
+
+    // Wait for the action to finish
+    //    auto result = hp_action_client_->async_get_result(goal_handle_future.get());
+  });
+
+  rclcpp::spin(node_);
+  run_thread.join();
 
   ASSERT_TRUE(action_successful_);
 }

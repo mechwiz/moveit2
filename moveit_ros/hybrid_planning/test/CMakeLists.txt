@@ -26,6 +26,6 @@ if(BUILD_TESTING)
       test_basic_integration.cpp
   )
   ament_target_dependencies(test_basic_integration ${THIS_PACKAGE_INCLUDE_DEPENDS})
-  add_ros_test(launch/test_basic_integration.test.py TIMEOUT 120 ARGS "test_binary_dir:=${CMAKE_CURRENT_BINARY_DIR}")
+  add_ros_test(launch/test_basic_integration.test.py TIMEOUT 30 ARGS "test_binary_dir:=${CMAKE_CURRENT_BINARY_DIR}")
 
 endif()

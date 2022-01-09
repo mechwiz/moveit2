@@ -61,9 +61,11 @@ public:
 
   HybridPlanningFixture() : node_(std::make_shared<rclcpp::Node>("hybrid_planning_testing"))
   {
-    executor_.add_node(node_);
     action_successful_ = false;
+    action_aborted_ = false;
     action_complete_ = false;
+
+    executor_.add_node(node_);
 
     std::string hybrid_planning_action_name = "";
     node_->declare_parameter("hybrid_planning_action_name", "");
@@ -172,6 +174,7 @@ public:
               RCLCPP_INFO(node_->get_logger(), "Hybrid planning goal succeeded");
               break;
             case rclcpp_action::ResultCode::ABORTED:
+              action_aborted_ = true;
               RCLCPP_ERROR(node_->get_logger(), "Hybrid planning goal was aborted");
               break;
             case rclcpp_action::ResultCode::CANCELED:
@@ -206,6 +209,7 @@ protected:
   planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor_;
   std::atomic_bool action_successful_;
   std::atomic_bool action_complete_;
+  std::atomic_bool action_aborted_;
 
   // Action request
   moveit_msgs::action::HybridPlanner::Goal goal_action_request_;
@@ -230,6 +234,30 @@ TEST_F(HybridPlanningFixture, ActionCompletion)
   }
   run_thread.join();
   ASSERT_TRUE(action_successful_);
+}
+
+// Make a hybrid planning request then abort it
+TEST_F(HybridPlanningFixture, ActionAbortion)
+{
+  std::thread run_thread([this]() {
+    rclcpp::sleep_for(5s);
+
+    // Send the goal
+    auto goal_handle_future = hp_action_client_->async_send_goal(goal_action_request_, send_goal_options_);
+
+    // Cancel the goal
+    hp_action_client_->async_cancel_all_goals();
+  });
+
+  rclcpp::Rate rate(10);
+  while (!action_complete_)
+  {
+    executor_.spin_once();
+    rate.sleep();
+  }
+  run_thread.join();
+  ASSERT_FALSE(action_successful_);
+  ASSERT_TRUE(action_aborted_);
 }
 }  // namespace moveit_hybrid_planning
 

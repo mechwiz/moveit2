@@ -118,11 +118,6 @@ public:
       declareOrGetParam<std::string>("local_solution_topic_type", local_solution_topic_type, undefined, node);
       declareOrGetParam<bool>("publish_joint_positions", publish_joint_positions, false, node);
       declareOrGetParam<bool>("publish_joint_velocities", publish_joint_velocities, false, node);
-      declareOrGetParam<double>("latency_compensation_seconds", latency_compensation_seconds, 0.0, node);
-      RCLCPP_ERROR_STREAM(node->get_logger(), latency_compensation_seconds);
-      RCLCPP_ERROR_STREAM(node->get_logger(), latency_compensation_seconds);
-      RCLCPP_ERROR_STREAM(node->get_logger(), latency_compensation_seconds);
-      RCLCPP_ERROR_STREAM(node->get_logger(), latency_compensation_seconds);
     }
 
     std::string group_name;
@@ -138,7 +133,6 @@ public:
     bool publish_joint_positions;
     bool publish_joint_velocities;
     double local_planning_frequency;
-    double latency_compensation_seconds;
   };
 
   /** \brief Constructor */
@@ -213,6 +207,6 @@ private:
   // Trajectory_operator instance handle trajectory matching and blending
   std::shared_ptr<TrajectoryOperatorInterface> trajectory_operator_instance_;
 
-  std::shared_ptr<rclcpp::Rate> traj_publication_period_;
+  std::shared_ptr<rclcpp::Rate> prev_waypoint_duration_;
 };
 }  // namespace moveit::hybrid_planning

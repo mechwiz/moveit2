@@ -122,6 +122,7 @@ public:
       declareOrGetParam<std::string>("monitored_planning_scene", monitored_planning_scene_topic, undefined, node);
       declareOrGetParam<std::string>("collision_object_topic", collision_object_topic, undefined, node);
       declareOrGetParam<std::string>("joint_states_topic", joint_states_topic, undefined, node);
+      declareOrGetParam<double>("latency_compensation_seconds", latency_compensation_seconds, 0.0, node);
     }
 
     std::string group_name;
@@ -140,6 +141,7 @@ public:
     std::string monitored_planning_scene_topic;
     std::string collision_object_topic;
     std::string joint_states_topic;
+    double latency_compensation_seconds;
   };
 
   /** \brief Constructor */
@@ -214,6 +216,6 @@ private:
   // Trajectory_operator instance handle trajectory matching and blending
   std::shared_ptr<TrajectoryOperatorInterface> trajectory_operator_instance_;
 
-  std::shared_ptr<rclcpp::Rate> prev_waypoint_duration_;
+  std::shared_ptr<rclcpp::Rate> traj_publication_period_;
 };
 }  // namespace moveit::hybrid_planning

@@ -54,13 +54,6 @@ bool SimpleSampler::initialize(const rclcpp::Node::SharedPtr& node, const moveit
     return false;
   }
 
-  node->declare_parameter("time_parameterization_timestep", 0.1);
-  if (!node->get_parameter<double>("time_parameterization_timestep", time_param_timestep_))
-  {
-    RCLCPP_ERROR(LOGGER, "time_parameterization_timestep parameter was not defined.");
-    return false;
-  }
-
   node->declare_parameter("waypoint_radian_tolerance", 0.0);
   if (!node->get_parameter<double>("waypoint_radian_tolerance", waypoint_radian_tolerance_))
   {
@@ -83,10 +76,10 @@ SimpleSampler::addTrajectorySegment(const robot_trajectory::RobotTrajectory& new
   // Throw away old reference trajectory and use trajectory update
   reference_trajectory_ = std::make_shared<robot_trajectory::RobotTrajectory>(new_trajectory);
 
-  // Waypoint duration is based on the fixed TOTG timestep parameter
-  for (size_t waypoint_idx = 0; waypoint_idx < reference_trajectory_->getWayPointCount() - 1; ++waypoint_idx)
+  if (!time_parametrization_.computeTimeStamps(*reference_trajectory_))
   {
-    reference_trajectory_->setWayPointDurationFromPrevious(waypoint_idx, time_param_timestep_);
+    RCLCPP_ERROR(LOGGER, "Time parameterization failed.");
+    feedback_.feedback = "Time parameterization failed.";
   }
 
   // If no errors, return empty feedback

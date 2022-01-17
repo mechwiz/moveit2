@@ -119,10 +119,6 @@ public:
       declareOrGetParam<bool>("publish_joint_positions", publish_joint_positions, false, node);
       declareOrGetParam<bool>("publish_joint_velocities", publish_joint_velocities, false, node);
       declareOrGetParam<double>("latency_compensation_seconds", latency_compensation_seconds, 0.0, node);
-      RCLCPP_ERROR_STREAM(node->get_logger(), latency_compensation_seconds);
-      RCLCPP_ERROR_STREAM(node->get_logger(), latency_compensation_seconds);
-      RCLCPP_ERROR_STREAM(node->get_logger(), latency_compensation_seconds);
-      RCLCPP_ERROR_STREAM(node->get_logger(), latency_compensation_seconds);
     }
 
     std::string group_name;

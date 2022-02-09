@@ -118,6 +118,7 @@ public:
       declareOrGetParam<std::string>("local_solution_topic_type", local_solution_topic_type, undefined, node);
       declareOrGetParam<bool>("publish_joint_positions", publish_joint_positions, false, node);
       declareOrGetParam<bool>("publish_joint_velocities", publish_joint_velocities, false, node);
+      declareOrGetParam<double>("latency_compensation_seconds", latency_compensation_seconds, 0.0, node);
       // Planning scene monitor options
       declareOrGetParam<std::string>("monitored_planning_scene", monitored_planning_scene_topic, undefined, node);
       declareOrGetParam<std::string>("collision_object_topic", collision_object_topic, undefined, node);
@@ -137,6 +138,7 @@ public:
     bool publish_joint_positions;
     bool publish_joint_velocities;
     double local_planning_frequency;
+    double latency_compensation_seconds;
     std::string monitored_planning_scene_topic;
     std::string collision_object_topic;
     std::string joint_states_topic;

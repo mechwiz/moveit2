@@ -52,6 +52,8 @@ const std::string UNDEFINED = "<undefined>";
 
 bool MoveItPlanningPipeline::initialize(const rclcpp::Node::SharedPtr& node)
 {
+  node_ptr_ = node;
+
   // TODO(andyz): how to standardize this for planning pipelines other than ompl?
   // Maybe use loadPlanningPipelines() from moveit_cpp.cpp
 
@@ -77,8 +79,6 @@ bool MoveItPlanningPipeline::initialize(const rclcpp::Node::SharedPtr& node)
 
   // Trajectory Execution Functionality (required by the MoveItPlanningPipeline but not used within hybrid planning)
   node->declare_parameter<std::string>("moveit_controller_manager", UNDEFINED);
-
-  node_ptr_ = node;
 
   // Initialize MoveItCpp API
   moveit_cpp::MoveItCpp::Options moveit_cpp_options(node);

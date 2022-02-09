@@ -79,6 +79,11 @@ jobs:
         uses: JafarAbdi/latest-rosdistro-release-date-action@main
         with:
           rosdistro: ${{ matrix.env.ROS_DISTRO }}
+      - name: Get latest timestamp repos file has been edited
+        id: repos_edit_timestamp
+        uses: vatanaksoytezer/latest-file-edit-timestamp-action@main
+        with:
+          file: moveit2.repos
       - name: Cache upstream workspace
         uses: pat-s/always-upload-cache@v2.1.5
         with:
@@ -86,7 +91,7 @@ jobs:
           key: ${{ env.CACHE_PREFIX }}-${{ github.run_id }}
           restore-keys: ${{ env.CACHE_PREFIX }}
         env:
-          CACHE_PREFIX: ${{ steps.rosdistro_release_date.outputs.date }}-upstream_ws-${{ matrix.env.IMAGE }}-${{ hashFiles('moveit2*.repos', '.github/workflows/ci.yaml') }}
+          CACHE_PREFIX: ${{ steps.rosdistro_release_date.outputs.date }}-upstream_ws-${{ steps.repos_edit_timestamp.outputs.timestamp }}-${{ matrix.env.IMAGE }}-${{ hashFiles('moveit2*.repos', '.github/workflows/ci.yaml') }}
       # The target directory cache doesn't include the source directory because
       # that comes from the checkout.  See "prepare target_ws for cache" task below
       - name: Cache target workspace
@@ -131,7 +136,7 @@ jobs:
           path: ${{ env.BASEDIR }}/target_ws/**/test_results/**/*.xml
       - name: Generate codecov report
         uses: rhaschke/lcov-action@main
-        if: matrix.env.CCOV && steps.ici.outputs.target_test_results == '0'
+        if: always() && matrix.env.CCOV && steps.ici.outputs.target_test_results == '0'
         with:
           docker: $DOCKER_IMAGE
           workdir: ${{ env.BASEDIR }}/target_ws
@@ -148,7 +153,7 @@ jobs:
           name: clang-tidy
           path: ${{ env.BASEDIR }}/target_ws/src/$(basename $(pwd))
       - name: Prepare target_ws for cache
-        if: always() && ! matrix.env.CCOV
+        if: always() && !matrix.env.CCOV
         run: |
           du -sh ${{ env.BASEDIR }}/target_ws
           sudo find ${{ env.BASEDIR }}/target_ws -wholename '*/test_results/*' -delete

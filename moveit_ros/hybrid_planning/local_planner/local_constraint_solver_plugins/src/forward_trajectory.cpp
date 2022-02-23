@@ -43,6 +43,7 @@ const rclcpp::Logger LOGGER = rclcpp::get_logger("local_planner_component");
 // If stuck for this many iterations or more, abort the local planning action
 constexpr size_t STUCK_ITERATIONS_THRESHOLD = 5;
 constexpr double STUCK_THRESHOLD_RAD = 1e-4;  // L1-norm sum across all joints
+constexpr double COLLISION_THRESHOLD = 0.01;  // Stop if closer than this [meters]
 }  // namespace
 
 namespace moveit::hybrid_planning
@@ -56,11 +57,21 @@ bool ForwardTrajectory::initialize(const rclcpp::Node::SharedPtr& node,
     node->get_parameter<bool>("stop_before_collision", stop_before_collision_);
   else
     stop_before_collision_ = node->declare_parameter<bool>("stop_before_collision", false);
-  planning_scene_monitor_ = planning_scene_monitor;
   node_ = node;
   path_invalidation_event_send_ = false;
   num_iterations_stuck_ = 0;
   previously_valid_path_ = false;
+
+  planning_scene_monitor_ = std::make_shared<planning_scene_monitor::PlanningSceneMonitor>(node, "robot_description");
+  planning_scene_monitor_->startSceneMonitor("/monitored_planning_scene");
+  planning_scene_monitor_->startWorldGeometryMonitor("/collision_object");
+  planning_scene_monitor_->startStateMonitor("/joint_states", "/attached_collision_object");
+  planning_scene_monitor_->monitorDiffs(true);
+  planning_scene_monitor_->stopPublishingPlanningScene();
+
+  collision_request_.distance = true;   // enable distance-based collision checking
+  collision_request_.contacts = false;  // Record the names of collision pairs
+
   return true;
 }
 
@@ -103,7 +114,12 @@ ForwardTrajectory::solve(const robot_trajectory::RobotTrajectory& local_trajecto
     {
       planning_scene_monitor::LockedPlanningSceneRO locked_planning_scene(planning_scene_monitor_);
       current_state = std::make_shared<moveit::core::RobotState>(locked_planning_scene->getCurrentState());
-      is_path_valid = locked_planning_scene->isPathValid(local_trajectory, local_trajectory.getGroupName(), false);
+      current_state->updateCollisionBodyTransforms();
+      collision_result_.clear();
+      collision_request_.group_name = local_trajectory.getGroupName();
+      locked_planning_scene->getCollisionEnv()->checkRobotCollision(collision_request_, collision_result_,
+                                                                    *current_state);
+      is_path_valid = (!collision_result_.collision || (collision_result_.distance < COLLISION_THRESHOLD));
     }
 
     // Check if path is valid

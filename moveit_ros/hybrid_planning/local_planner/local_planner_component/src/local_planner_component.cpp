@@ -94,7 +94,9 @@ bool LocalPlannerComponent::initialize()
   // Start state and scene monitors
   planning_scene_monitor_->startSceneMonitor(config_.monitored_planning_scene_topic);
   planning_scene_monitor_->startWorldGeometryMonitor(config_.collision_object_topic);
-  planning_scene_monitor_->startStateMonitor(config_.joint_states_topic);
+  planning_scene_monitor_->startStateMonitor(config_.joint_states_topic, "/attached_collision_object");
+  planning_scene_monitor_->monitorDiffs(true);
+  planning_scene_monitor_->stopPublishingPlanningScene();
 
   // Load trajectory operator plugin
   try
@@ -236,17 +238,15 @@ void LocalPlannerComponent::executeIteration()
     // If the planner received an action request and a global solution it starts to plan locally
     case LocalPlannerState::LOCAL_PLANNING_ACTIVE:
     {
-      // Read current planning scene
-      planning_scene_monitor_->updateSceneWithCurrentState();
-      planning_scene_monitor_->lockSceneRead();  // LOCK planning scene
-      planning_scene::PlanningScenePtr planning_scene = planning_scene_monitor_->getPlanningScene();
-      planning_scene_monitor_->unlockSceneRead();  // UNLOCK planning scene
-
-      // Get current state
-      auto current_robot_state = planning_scene->getCurrentStateNonConst();
+      // Read current robot state
+      moveit::core::RobotStatePtr current_robot_state;
+      {
+        planning_scene_monitor::LockedPlanningSceneRO ls(planning_scene_monitor_);
+        current_robot_state = std::make_shared<moveit::core::RobotState>(ls->getCurrentState());
+      }
 
       // Check if the global goal is reached
-      if (trajectory_operator_instance_->getTrajectoryProgress(current_robot_state) > PROGRESS_THRESHOLD)
+      if (trajectory_operator_instance_->getTrajectoryProgress(*current_robot_state) > PROGRESS_THRESHOLD)
       {
         local_planning_goal_handle_->succeed(result);
         reset();
@@ -257,7 +257,7 @@ void LocalPlannerComponent::executeIteration()
       robot_trajectory::RobotTrajectory local_trajectory =
           robot_trajectory::RobotTrajectory(planning_scene_monitor_->getRobotModel(), config_.group_name);
       *local_planner_feedback_ =
-          trajectory_operator_instance_->getLocalTrajectory(current_robot_state, local_trajectory);
+          trajectory_operator_instance_->getLocalTrajectory(*current_robot_state, local_trajectory);
 
       // Feedback is only sent when the hybrid planning architecture should react to a discrete event that occurred
       // during the identification of the local planning problem
@@ -312,7 +312,6 @@ void LocalPlannerComponent::executeIteration()
 
       // Angle wrapping
       // This matters especially for continuous joints
-      current_robot_state = planning_scene->getCurrentStateNonConst();
       for (auto& point : local_solution.points)
       {
         for (size_t joint_idx = 0; joint_idx < point.positions.size(); ++joint_idx)
@@ -320,7 +319,7 @@ void LocalPlannerComponent::executeIteration()
           double& target_position = point.positions.at(joint_idx);
           double shortest_angle = 0;
           const double* current_position =
-              current_robot_state.getJointPositions(local_solution.joint_names.at(joint_idx));
+              current_robot_state->getJointPositions(local_solution.joint_names.at(joint_idx));
           shortest_angle = angles::shortest_angular_distance(*current_position, target_position);
           target_position = *current_position + shortest_angle;
         }

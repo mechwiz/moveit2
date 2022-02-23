@@ -239,14 +239,13 @@ void LocalPlannerComponent::executeIteration()
     case LocalPlannerState::LOCAL_PLANNING_ACTIVE:
     {
       // Read current robot state
-      moveit::core::RobotStatePtr current_robot_state;
-      {
+      const moveit::core::RobotState current_robot_state = [this] {
         planning_scene_monitor::LockedPlanningSceneRO ls(planning_scene_monitor_);
-        current_robot_state = std::make_shared<moveit::core::RobotState>(ls->getCurrentState());
-      }
+        return ls->getCurrentState();
+      }();
 
       // Check if the global goal is reached
-      if (trajectory_operator_instance_->getTrajectoryProgress(*current_robot_state) > PROGRESS_THRESHOLD)
+      if (trajectory_operator_instance_->getTrajectoryProgress(current_robot_state) > PROGRESS_THRESHOLD)
       {
         local_planning_goal_handle_->succeed(result);
         reset();
@@ -257,7 +256,7 @@ void LocalPlannerComponent::executeIteration()
       robot_trajectory::RobotTrajectory local_trajectory =
           robot_trajectory::RobotTrajectory(planning_scene_monitor_->getRobotModel(), config_.group_name);
       *local_planner_feedback_ =
-          trajectory_operator_instance_->getLocalTrajectory(*current_robot_state, local_trajectory);
+          trajectory_operator_instance_->getLocalTrajectory(current_robot_state, local_trajectory);
 
       // Feedback is only sent when the hybrid planning architecture should react to a discrete event that occurred
       // during the identification of the local planning problem
@@ -319,7 +318,7 @@ void LocalPlannerComponent::executeIteration()
           double& target_position = point.positions.at(joint_idx);
           double shortest_angle = 0;
           const double* current_position =
-              current_robot_state->getJointPositions(local_solution.joint_names.at(joint_idx));
+              current_robot_state.getJointPositions(local_solution.joint_names.at(joint_idx));
           shortest_angle = angles::shortest_angular_distance(*current_position, target_position);
           target_position = *current_position + shortest_angle;
         }

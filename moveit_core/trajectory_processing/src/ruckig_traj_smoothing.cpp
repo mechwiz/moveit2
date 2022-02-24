@@ -82,7 +82,7 @@ bool RuckigSmoothing::applySmoothing(robot_trajectory::RobotTrajectory& trajecto
   trajectory.unwind();
 
   // Instantiate the smoother
-  double timestep = trajectory.getAverageSegmentDuration();
+  double timestep = trajectory.getWayPointDurationFromStart(num_waypoints - 1) / (trajectory.getWayPointCount() - 1);
   std::unique_ptr<ruckig::Ruckig<RUCKIG_DYNAMIC_DOF>> ruckig_ptr;
   ruckig_ptr = std::make_unique<ruckig::Ruckig<RUCKIG_DYNAMIC_DOF>>(num_dof, timestep);
   ruckig::InputParameter<RUCKIG_DYNAMIC_DOF> ruckig_input{ num_dof };
@@ -186,7 +186,7 @@ bool RuckigSmoothing::applySmoothing(robot_trajectory::RobotTrajectory& trajecto
         // TODO(andyz): re-calculate waypoint velocity and acceleration here?
       }
 
-      timestep = trajectory.getAverageSegmentDuration();
+      timestep = trajectory.getWayPointDurationFromStart(num_waypoints - 1) / (trajectory.getWayPointCount() - 1);
       ruckig_ptr = std::make_unique<ruckig::Ruckig<RUCKIG_DYNAMIC_DOF>>(num_dof, timestep);
     }
   }

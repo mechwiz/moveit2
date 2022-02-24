@@ -169,8 +169,9 @@ bool RuckigSmoothing::applySmoothing(robot_trajectory::RobotTrajectory& trajecto
     smoothing_complete = (ruckig_result == ruckig::Result::Finished);
     if (!smoothing_complete)
     {
-      // If Ruckig failed, it's likely because the original seed trajectory did not have a long enough duration when
-      // jerk is taken into account. Extend the duration and try again.
+      // If Ruckig failed on the final waypoint, it's likely the original seed trajectory did not
+      // have a long enough duration when jerk is taken into account. Extend the duration and try
+      // again.
       initializeRuckigState(ruckig_input, ruckig_output, *trajectory.getFirstWayPointPtr(), num_dof, idx);
       duration_extension_factor *= DURATION_EXTENSION_FRACTION;
       // Reset the trajectory

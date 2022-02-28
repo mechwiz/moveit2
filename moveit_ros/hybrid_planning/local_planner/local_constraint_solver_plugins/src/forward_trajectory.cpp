@@ -120,6 +120,11 @@ ForwardTrajectory::solve(const robot_trajectory::RobotTrajectory& local_trajecto
       locked_planning_scene->getCollisionEnv()->checkRobotCollision(collision_request_, collision_result_,
                                                                     *current_state);
       is_path_valid = (!(collision_result_.collision || (collision_result_.distance < COLLISION_THRESHOLD)));
+
+      collision_result_.clear();
+      locked_planning_scene->getCollisionEnv()->checkSelfCollision(collision_request_, collision_result_,
+                                                                   *current_state);
+      is_path_valid |= (!collision_result_.collision);
     }
 
     // Check if path is valid

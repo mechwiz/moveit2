@@ -113,13 +113,14 @@ double getVelocityScalingFactor(const moveit::core::JointModelGroup* joint_model
 
 /**
  * @brief Decrease robot position change and velocity, if needed, to satisfy joint velocity limits
- * @param joint_model_group Active joint group. Used to retrieve limits
+ * @param active_joints_models_bounds The joint limits from the active joint model group
  * @param publish_period Period of the servo loop
  * @param joint_state The command that will go to the robot
  * @param override_velocity_scaling_factor Option if the user wants a constant override of the velocity scaling.
  *        A value greater than 0 will override the internal calculations done by getVelocityScalingFactor
  */
-void enforceVelocityLimits(const moveit::core::JointModelGroup* joint_model_group, const double publish_period,
+void enforceVelocityLimits(const std::vector<moveit_msgs::msg::JointLimits>& active_joints_models_bounds,
+                           const double publish_period,
                            sensor_msgs::msg::JointState& joint_state,
                            const double override_velocity_scaling_factor = 0.0);
 

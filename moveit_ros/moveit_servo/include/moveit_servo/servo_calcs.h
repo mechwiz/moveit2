@@ -49,6 +49,7 @@
 #include <geometry_msgs/msg/twist_stamped.hpp>
 #include <moveit/planning_scene_monitor/planning_scene_monitor.h>
 #include <moveit/robot_model_loader/robot_model_loader.h>
+#include <moveit_msgs/srv/change_joint_limits.hpp>
 #include <pluginlib/class_loader.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
@@ -191,6 +192,15 @@ protected:
   void jointCmdCB(const control_msgs::msg::JointJog::ConstSharedPtr& msg);
   void collisionVelocityScaleCB(const std_msgs::msg::Float64::ConstSharedPtr& msg);
 
+  /** \brief Change Joint Limits Dynamically */
+  // Service callback for changing joint limits
+  void changeJointLimits(const std::shared_ptr<moveit_msgs::srv::ChangeJointLimits::Request>& req,
+                         const std::shared_ptr<moveit_msgs::srv::ChangeJointLimits::Response>& res);
+
+  /** \brief Service callback to reset Servo status, e.g. so the arm can move again after a collision */
+  bool resetServoStatus(const std::shared_ptr<std_srvs::srv::Empty::Request>& req,
+                        const std::shared_ptr<std_srvs::srv::Empty::Response>& res);
+
   // Pointer to the ROS node
   std::shared_ptr<rclcpp::Node> node_;
 
@@ -234,6 +244,8 @@ protected:
   rclcpp::Publisher<std_msgs::msg::Int8>::SharedPtr status_pub_;
   rclcpp::Publisher<trajectory_msgs::msg::JointTrajectory>::SharedPtr trajectory_outgoing_cmd_pub_;
   rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr multiarray_outgoing_cmd_pub_;
+  rclcpp::Service<moveit_msgs::srv::ChangeJointLimits>::SharedPtr joint_limits_update_server_;
+  rclcpp::Service<std_srvs::srv::Empty>::SharedPtr reset_servo_status_;
 
   // Main tracking / result publisher loop
   std::thread thread_;
@@ -267,5 +279,8 @@ protected:
   pluginlib::ClassLoader<online_signal_smoothing::SmoothingBaseClass> smoothing_loader_;
 
   kinematics::KinematicsBaseConstPtr ik_solver_ = nullptr;
+
+  // joint bounds for dynamic updates
+  std::vector<moveit_msgs::msg::JointLimits> active_joints_models_bounds_;
 };
 }  // namespace moveit_servo

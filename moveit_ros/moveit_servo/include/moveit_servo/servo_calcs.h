@@ -51,6 +51,7 @@
 #include <moveit/robot_model_loader/robot_model_loader.h>
 #include <moveit_msgs/srv/change_drift_dimensions.hpp>
 #include <moveit_msgs/srv/change_control_dimensions.hpp>
+#include <moveit_msgs/srv/change_joint_limits.hpp>
 #include <pluginlib/class_loader.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
@@ -258,6 +259,11 @@ protected:
   void changeControlDimensions(const std::shared_ptr<moveit_msgs::srv::ChangeControlDimensions::Request> req,
                                std::shared_ptr<moveit_msgs::srv::ChangeControlDimensions::Response> res);
 
+  /** \brief Change Joint Limits Dynamically */
+  // Service callback for changing joint limits
+  void changeJointLimits(const std::shared_ptr<moveit_msgs::srv::ChangeJointLimits::Request> req,
+                         std::shared_ptr<moveit_msgs::srv::ChangeJointLimits::Response> res);
+
   /** \brief Service callback to reset Servo status, e.g. so the arm can move again after a collision */
   bool resetServoStatus(const std::shared_ptr<std_srvs::srv::Empty::Request> req,
                         std::shared_ptr<std_srvs::srv::Empty::Response> res);
@@ -318,6 +324,7 @@ protected:
   rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr condition_pub_;
   rclcpp::Service<moveit_msgs::srv::ChangeControlDimensions>::SharedPtr control_dimensions_server_;
   rclcpp::Service<moveit_msgs::srv::ChangeDriftDimensions>::SharedPtr drift_dimensions_server_;
+  rclcpp::Service<moveit_msgs::srv::ChangeJointLimits>::SharedPtr joint_limits_update_server_;
   rclcpp::Service<std_srvs::srv::Empty>::SharedPtr reset_servo_status_;
 
   // Main tracking / result publisher loop
@@ -367,5 +374,8 @@ protected:
 
   // Load a smoothing plugin
   pluginlib::ClassLoader<online_signal_smoothing::SmoothingBaseClass> smoothing_loader_;
+
+  // joint bounds for dynamic updates
+  std::vector<moveit_msgs::msg::JointLimits> active_joints_models_bounds_;
 };
 }  // namespace moveit_servo

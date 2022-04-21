@@ -67,10 +67,15 @@ protected:
   {
     robot_model_ = moveit::core::loadTestingRobotModel("panda");
     joint_model_group_ = robot_model_->getJointModelGroup("panda_arm");
+    for (auto joint : joint_model_group_->getActiveJointModels())
+    {
+      active_joints_models_bounds_.push_back(joint->getVariableBoundsMsg()[0]);
+    }
   }
 
   moveit::core::RobotModelPtr robot_model_;
   const moveit::core::JointModelGroup* joint_model_group_;
+  std::vector<moveit_msgs::msg::JointLimits> active_joints_models_bounds_;
 };
 
 }  // namespace
@@ -84,7 +89,7 @@ TEST_F(EnforceLimitsTests, VelocityScalingTest)
   joint_state.position = joint_position;
   joint_state.velocity = joint_velocity;
 
-  moveit_servo::enforceVelocityLimits(joint_model_group_, PUBLISH_PERIOD, joint_state);
+  moveit_servo::enforceVelocityLimits(active_joints_models_bounds_, PUBLISH_PERIOD, joint_state);
 
   Eigen::ArrayXd eigen_velocity =
       Eigen::Map<Eigen::ArrayXd, Eigen::Unaligned>(joint_state.velocity.data(), joint_state.velocity.size());
@@ -100,7 +105,7 @@ TEST_F(EnforceLimitsTests, NegativeJointAngleDeltasTest)
   joint_state.position = joint_position;
   joint_state.velocity = joint_velocity;
 
-  moveit_servo::enforceVelocityLimits(joint_model_group_, PUBLISH_PERIOD, joint_state);
+  moveit_servo::enforceVelocityLimits(active_joints_models_bounds_, PUBLISH_PERIOD, joint_state);
 
   Eigen::ArrayXd eigen_velocity =
       Eigen::Map<Eigen::ArrayXd, Eigen::Unaligned>(joint_state.velocity.data(), joint_state.velocity.size());
@@ -116,7 +121,7 @@ TEST_F(EnforceLimitsTests, LowJointVelocityDeltaTest)
   joint_state.position = joint_position;
   joint_state.velocity = joint_velocity;
 
-  moveit_servo::enforceVelocityLimits(joint_model_group_, PUBLISH_PERIOD, joint_state);
+  moveit_servo::enforceVelocityLimits(active_joints_models_bounds_, PUBLISH_PERIOD, joint_state);
 
   Eigen::ArrayXd eigen_velocity =
       Eigen::Map<Eigen::ArrayXd, Eigen::Unaligned>(joint_state.velocity.data(), joint_state.velocity.size());

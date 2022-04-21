@@ -120,6 +120,11 @@ ServoCalcs::ServoCalcs(rclcpp::Node::SharedPtr node,
     throw std::runtime_error("Invalid move group name");
   }
 
+  for (auto joint : joint_model_group_->getActiveJointModels())
+  {
+    active_joints_models_bounds_.push_back(joint->getVariableBoundsMsg()[0]);
+  }
+
   // Subscribe to command topics
   using std::placeholders::_1;
   using std::placeholders::_2;
@@ -142,6 +147,10 @@ ServoCalcs::ServoCalcs(rclcpp::Node::SharedPtr node,
   // ROS Server to reset the status, e.g. so the arm can move again after a collision
   reset_servo_status_ = node_->create_service<std_srvs::srv::Empty>(
       "~/reset_servo_status", std::bind(&ServoCalcs::resetServoStatus, this, _1, _2));
+
+  // ROS Server to reset the status, e.g. so the arm can move again after a collision
+  joint_limits_update_server_ = node_->create_service<moveit_msgs::srv::ChangeJointLimits>(
+      "~/change_joint_limits", std::bind(&ServoCalcs::changeJointLimits, this, _1, _2));
 
   // Subscribe to the collision_check topic
   collision_velocity_scale_sub_ =
@@ -626,7 +635,7 @@ bool ServoCalcs::internalServoUpdate(Eigen::ArrayXd& delta_theta,
   updated_filters_ = true;
 
   // Enforce SRDF velocity limits
-  enforceVelocityLimits(joint_model_group_, parameters_->publish_period, internal_joint_state_,
+  enforceVelocityLimits(active_joints_models_bounds_, parameters_->publish_period, internal_joint_state_,
                         parameters_->override_velocity_scaling_factor);
 
   // Enforce SRDF position limits, might halt if needed, set prev_vel to 0
@@ -1203,6 +1212,39 @@ void ServoCalcs::changeControlDimensions(const std::shared_ptr<moveit_msgs::srv:
   control_dimensions_[3] = req->control_x_rotation;
   control_dimensions_[4] = req->control_y_rotation;
   control_dimensions_[5] = req->control_z_rotation;
+
+  res->success = true;
+}
+
+void ServoCalcs::changeJointLimits(const std::shared_ptr<moveit_msgs::srv::ChangeJointLimits::Request> req,
+                                   std::shared_ptr<moveit_msgs::srv::ChangeJointLimits::Response> res)
+{
+  for (auto jl : req->limits)
+  {
+    for (auto& joint : active_joints_models_bounds_)
+    {
+      if (jl.joint_name == joint.joint_name)
+      {
+        if (jl.has_position_limits)
+        {
+          RCLCPP_WARN_STREAM(LOGGER, "Dynamically updating position limits is not supported");
+        }
+        if (jl.has_velocity_limits)
+        {
+          joint.max_velocity = jl.max_velocity;
+        }
+        if (jl.has_acceleration_limits)
+        {
+          RCLCPP_WARN_STREAM(LOGGER, "Dynamically updating acceleration limits is not supported");
+        }
+        if (jl.has_jerk_limits)
+        {
+          RCLCPP_WARN_STREAM(LOGGER, "Dynamically updating jerk limits is not supported");
+        }
+        break;
+      }
+    }
+  }
 
   res->success = true;
 }

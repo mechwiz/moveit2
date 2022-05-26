@@ -3,10 +3,18 @@ repositories:
     type: git
     url: https://github.com/ros-planning/geometric_shapes
     version: ros2
+  moveit_msgs:
+    type: git
+    url: https://github.com/mechwiz/moveit_msgs
+    version: add_new_msgs
   moveit_resources:
     type: git
     url: https://github.com/ros-planning/moveit_resources
     version: ros2
+  ompl:
+    type: git
+    url: https://github.com/ompl/ompl.git
+    version: main
   srdfdom:
     type: git
     url: https://github.com/ros-planning/srdfdom.git

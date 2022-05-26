@@ -15,3 +15,11 @@ repositories:
     type: git
     url: https://github.com/PickNikRobotics/RSL.git
     version: 0.2.0
+  moveit_msgs:
+    type: git
+    url: https://github.com/mechwiz/moveit_msgs
+    version: add_new_msgs
+  ompl:
+    type: git
+    url: https://github.com/ompl/ompl.git
+    version: main

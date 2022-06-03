@@ -147,6 +147,16 @@ public:
   /** \brief Constructor */
   LocalPlannerComponent(const rclcpp::NodeOptions& options);
 
+  /** \brief Destructor */
+  ~LocalPlannerComponent()
+  {
+    // Join the thread used for long-running callbacks
+    if (long_callback_thread_.joinable())
+    {
+      long_callback_thread_.join();
+    }
+  }
+
   /**
    * Initialize and start planning scene monitor to listen to the planning scene topic.
    * Load trajectory_operator and constraint solver plugin.
@@ -217,5 +227,11 @@ private:
   std::shared_ptr<TrajectoryOperatorInterface> trajectory_operator_instance_;
 
   std::shared_ptr<rclcpp::Rate> traj_publication_period_;
+
+  // This thread is used for long-running callbacks. It's a member so they do not go out of scope.
+  std::thread long_callback_thread_;
+
+  // A unique callback group, to avoid mixing callbacks with other action servers
+  rclcpp::CallbackGroup::SharedPtr cb_group_;
 };
 }  // namespace moveit::hybrid_planning

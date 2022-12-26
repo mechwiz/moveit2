@@ -71,14 +71,12 @@ public:
       RCLCPP_DEBUG(LOGGER, " Running '%s'", getDescription().c_str());
       const auto params = param_listener_->get_params();
       TimeOptimalTrajectoryGeneration totg(params.path_tolerance, params.resample_dt, params.min_angle_change);
-      if (req.use_joint_limits)
-        result = totg.computeTimeStamps(*res.trajectory, req.joint_limits, req.max_velocity_scaling_factor,
-                                        req.max_acceleration_scaling_factor);
-      else
-        result = totg.computeTimeStamps(*res.trajectory, req.max_velocity_scaling_factor,
-                                        req.max_acceleration_scaling_factor);
-      if (!result)
+      if (!totg.computeTimeStamps(*res.trajectory, req.joint_limits, req.max_velocity_scaling_factor,
+                                  req.max_acceleration_scaling_factor))
+      {
         RCLCPP_WARN(LOGGER, " Time parametrization for the solution path failed.");
+        result = false;
+      }
     }
 
     return result;

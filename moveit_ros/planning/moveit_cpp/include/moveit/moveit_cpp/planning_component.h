@@ -65,7 +65,6 @@ public:
     double max_velocity_scaling_factor;
     double max_acceleration_scaling_factor;
     std::vector<moveit_msgs::msg::JointLimits> joint_limits;
-    bool use_joint_limits = false;
     bool skip_smoothing = false;
 
     template <typename T>

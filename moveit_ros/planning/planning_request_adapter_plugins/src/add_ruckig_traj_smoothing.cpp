@@ -68,12 +68,11 @@ public:
     bool result = planner(planning_scene, req, res);
     if (result && res.trajectory && !req.skip_smoothing)
     {
-      if (req.use_joint_limits)
-        result = smoother_.applySmoothing(*res.trajectory_, req.joint_limits, req.max_velocity_scaling_factor,
-                                          req.max_acceleration_scaling_factor);
-      else
-        result = smoother_.applySmoothing(*res.trajectory_, req.max_velocity_scaling_factor,
-                                          req.max_acceleration_scaling_factor);
+      if (!smoother_.applySmoothing(*res.trajectory, req.joint_limits, req.max_velocity_scaling_factor,
+                                    req.max_acceleration_scaling_factor))
+      {
+        result = false;
+      }
     }
 
     return result;

@@ -184,7 +184,6 @@ moveit_msgs::msg::MotionPlanResponse MoveItPlanningPipeline::plan(
     plan_params.max_velocity_scaling_factor = motion_plan_req.max_velocity_scaling_factor;
     plan_params.max_acceleration_scaling_factor = motion_plan_req.max_acceleration_scaling_factor;
     plan_params.joint_limits = motion_plan_req.joint_limits;
-    plan_params.use_joint_limits = motion_plan_req.use_joint_limits;
     plan_params.skip_smoothing = motion_plan_req.skip_smoothing;
 
     // Create planning component

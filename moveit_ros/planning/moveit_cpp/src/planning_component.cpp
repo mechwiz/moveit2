@@ -330,8 +330,8 @@ PlanningComponent::getMotionPlanRequest(const PlanRequestParameters& plan_reques
   request.allowed_planning_time = plan_request_parameters.planning_time;
   request.max_velocity_scaling_factor = plan_request_parameters.max_velocity_scaling_factor;
   request.max_acceleration_scaling_factor = plan_request_parameters.max_acceleration_scaling_factor;
-  req.joint_limits = plan_request_parameters.joint_limits;
-  req.skip_smoothing = plan_request_parameters.skip_smoothing;
+  request.joint_limits = plan_request_parameters.joint_limits;
+  request.skip_smoothing = plan_request_parameters.skip_smoothing;
   if (workspace_parameters_set_)
   {
     request.workspace_parameters = workspace_parameters_;

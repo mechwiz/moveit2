@@ -837,7 +837,9 @@ void BenchmarkExecutor::runBenchmark(moveit_msgs::msg::MotionPlanRequest request
         .planning_attempts = request.num_planning_attempts,
         .planning_time = request.allowed_planning_time,
         .max_velocity_scaling_factor = request.max_velocity_scaling_factor,
-        .max_acceleration_scaling_factor = request.max_acceleration_scaling_factor
+        .max_acceleration_scaling_factor = request.max_acceleration_scaling_factor,
+        .joint_limits = request.joint_limits,
+        .skip_smoothing = request.skip_smoothing
       };
 
       // Iterate runs
@@ -932,7 +934,9 @@ void BenchmarkExecutor::runBenchmark(moveit_msgs::msg::MotionPlanRequest request
           .planning_attempts = request.num_planning_attempts,
           .planning_time = request.allowed_planning_time,
           .max_velocity_scaling_factor = request.max_velocity_scaling_factor,
-          .max_acceleration_scaling_factor = request.max_acceleration_scaling_factor
+          .max_acceleration_scaling_factor = request.max_acceleration_scaling_factor,
+          .joint_limits = request.joint_limits,
+          .skip_smoothing = request.skip_smoothing
         };
         multi_pipeline_plan_request.plan_request_parameter_vector.push_back(plan_req_params);
       }

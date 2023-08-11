@@ -53,16 +53,20 @@ TEST(ServoUtilsUnitTests, JointLimitVelocityScaling)
 {
   using moveit::core::loadTestingRobotModel;
   moveit::core::RobotModelPtr robot_model = loadTestingRobotModel("panda");
-  moveit::core::JointBoundsVector joint_bounds = robot_model->getActiveJointModelsBounds();
+  std::vector<moveit_msgs::msg::JointLimits> joint_bounds;
+  for (const auto& joint : robot_model->getActiveJointModels())
+  {
+    joint_bounds.push_back(joint->getVariableBoundsMsg()[0]);
+  }
 
   // Get the upper bound for the velocities of each joint.
   Eigen::VectorXd incoming_velocities(joint_bounds.size());
   for (size_t i = 0; i < joint_bounds.size(); i++)
   {
-    const auto joint_bound = (*joint_bounds[i])[0];
-    if (joint_bound.velocity_bounded_)
+    const auto joint_bound = joint_bounds[i];
+    if (joint_bound.has_velocity_limits)
     {
-      incoming_velocities(i) = joint_bound.max_velocity_;
+      incoming_velocities(i) = joint_bound.max_velocity;
     }
   }
 

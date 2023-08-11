@@ -130,7 +130,8 @@ std::pair<double, StatusCode> velocityScalingFactorForSingularity(const moveit::
  * @return The velocity scaling factor.
  */
 double jointLimitVelocityScalingFactor(const Eigen::VectorXd& velocities,
-                                       const moveit::core::JointBoundsVector& joint_bounds, double scaling_override);
+                                       const std::vector<moveit_msgs::msg::JointLimits>& joint_bounds,
+                                       double scaling_override);
 
 /**
  * \brief Finds the joints that are exceeding allowable position limits.
@@ -141,7 +142,7 @@ double jointLimitVelocityScalingFactor(const Eigen::VectorXd& velocities,
  * @return The joints that are violating the specified position limits.
  */
 std::vector<int> jointsToHalt(const Eigen::VectorXd& positions, const Eigen::VectorXd& velocities,
-                              const moveit::core::JointBoundsVector& joint_bounds, double margin);
+                              const std::vector<moveit_msgs::msg::JointLimits>& joint_bounds, double margin);
 
 /**
  * \brief Helper function for converting Eigen::Isometry3d to geometry_msgs/TransformStamped.

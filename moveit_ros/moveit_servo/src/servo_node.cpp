@@ -145,6 +145,13 @@ ServoNode::ServoNode(const rclcpp::NodeOptions& options)
         return pauseServo(request, response);
       });
 
+  // ROS Server to update joint limits dynamically
+  joint_limits_update_server_ = node_->create_service<moveit_msgs::srv::ChangeJointLimits>(
+      "~/change_joint_limits", [this](const std::shared_ptr<moveit_msgs::srv::ChangeJointLimits::Request> request,
+                                      const std::shared_ptr<moveit_msgs::srv::ChangeJointLimits::Response> response) {
+        return changeJointLimits(request, response);
+      });
+
   // Start the servoing loop
   servo_loop_thread_ = std::thread(&ServoNode::servoLoop, this);
 }
@@ -340,6 +347,12 @@ void ServoNode::servoLoop()
 
     servo_frequency.sleep();
   }
+}
+
+void ServoNode::changeJointLimits(const std::shared_ptr<moveit_msgs::srv::ChangeJointLimits::Request>& request,
+                                  const std::shared_ptr<moveit_msgs::srv::ChangeJointLimits::Response>& response)
+{
+  response->success = servo_->updateJointLimits(request->limits);
 }
 
 }  // namespace moveit_servo

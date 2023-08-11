@@ -248,7 +248,8 @@ std::pair<double, StatusCode> velocityScalingFactorForSingularity(const moveit::
 }
 
 double jointLimitVelocityScalingFactor(const Eigen::VectorXd& velocities,
-                                       const moveit::core::JointBoundsVector& joint_bounds, double scaling_override)
+                                       const std::vector<moveit_msgs::msg::JointLimits>& joint_bounds,
+                                       double scaling_override)
 {
   // If override value is close to zero, user is not overriding the scaling
   if (scaling_override < SCALING_OVERRIDE_THRESHOLD)
@@ -259,11 +260,11 @@ double jointLimitVelocityScalingFactor(const Eigen::VectorXd& velocities,
 
     for (size_t i = 0; i < joint_bounds.size(); i++)
     {
-      const auto joint_bound = (joint_bounds[i])->front();
-      if (joint_bound.velocity_bounded_ && velocities(i) != 0.0)
+      const auto joint_bound = joint_bounds[i];
+      if (joint_bound.has_velocity_limits && velocities(i) != 0.0)
       {
         // Find the ratio of clamped velocity to original velocity
-        bounded_vel = std::clamp(velocities(i), joint_bound.min_velocity_, joint_bound.max_velocity_);
+        bounded_vel = std::clamp(velocities(i), -joint_bound.max_velocity, joint_bound.max_velocity);
         velocity_scaling_factors.push_back(bounded_vel / velocities(i));
       }
     }
@@ -277,16 +278,16 @@ double jointLimitVelocityScalingFactor(const Eigen::VectorXd& velocities,
 }
 
 std::vector<int> jointsToHalt(const Eigen::VectorXd& positions, const Eigen::VectorXd& velocities,
-                              const moveit::core::JointBoundsVector& joint_bounds, double margin)
+                              const std::vector<moveit_msgs::msg::JointLimits>& joint_bounds, double margin)
 {
   std::vector<int> joint_idxs_to_halt;
   for (size_t i = 0; i < joint_bounds.size(); i++)
   {
-    const auto joint_bound = (joint_bounds[i])->front();
-    if (joint_bound.position_bounded_)
+    const auto joint_bound = joint_bounds[i];
+    if (joint_bound.has_position_limits)
     {
-      const bool negative_bound = velocities[i] < 0 && positions[i] < (joint_bound.min_position_ + margin);
-      const bool positive_bound = velocities[i] > 0 && positions[i] > (joint_bound.max_position_ - margin);
+      const bool negative_bound = velocities[i] < 0 && positions[i] < (joint_bound.min_position + margin);
+      const bool positive_bound = velocities[i] > 0 && positions[i] > (joint_bound.max_position - margin);
       if (negative_bound || positive_bound)
       {
         joint_idxs_to_halt.push_back(i);

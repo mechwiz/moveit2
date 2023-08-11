@@ -41,6 +41,7 @@
 
 #pragma once
 
+#include <moveit_msgs/msg/joint_limits.hpp>
 #include <moveit_servo_lib_parameters.hpp>
 #include <moveit_servo/collision_monitor.hpp>
 #include <moveit_servo/utils/command.hpp>
@@ -131,6 +132,13 @@ public:
    */
   std::pair<bool, KinematicState> smoothHalt(KinematicState halt_state);
 
+  /**
+   * \brief Update joint limits of the current joint group
+   * @param The desired joint limits
+   * @return Whether the update was successfull
+   */
+  bool updateJointLimits(const std::vector<moveit_msgs::msg::JointLimits>& joint_limits);
+
 private:
   /**
    * \brief Convert a give twist command to planning frame,
@@ -208,6 +216,9 @@ private:
 
   tf2_ros::Buffer transform_buffer_;
   tf2_ros::TransformListener transform_listener_;
+
+  // joint bounds for dynamic updates
+  std::vector<moveit_msgs::msg::JointLimits> joint_bounds_;
 };
 
 }  // namespace moveit_servo

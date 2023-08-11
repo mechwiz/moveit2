@@ -103,6 +103,11 @@ Servo::Servo(const rclcpp::Node::SharedPtr& node, std::shared_ptr<const servo::P
   }
   else
   {
+    auto joint_model_group = robot_state->getJointModelGroup(servo_params_.move_group_name);
+    for (const auto& joint : joint_model_group->getActiveJointModels())
+    {
+      joint_bounds_.push_back(joint->getVariableBoundsMsg()[0]);
+    }
     // Load the smoothing plugin
     if (servo_params_.use_smoothing)
     {
@@ -230,6 +235,13 @@ bool Servo::updateParams()
       {
         RCLCPP_INFO_STREAM(LOGGER, "Move group changed from " << servo_params_.move_group_name << " to "
                                                               << params.move_group_name);
+        auto robot_state = planning_scene_monitor_->getStateMonitor()->getCurrentState();
+        auto joint_model_group = robot_state->getJointModelGroup(params.move_group_name);
+        joint_bounds_.clear();
+        for (const auto& joint : joint_model_group->getActiveJointModels())
+        {
+          joint_bounds_.push_back(joint->getVariableBoundsMsg()[0]);
+        }
       }
 
       servo_params_ = params;
@@ -386,7 +398,6 @@ KinematicState Servo::getNextJointState(const ServoInput& command)
 
   // Get necessary information about joints
   const std::vector<std::string> joint_names = joint_model_group->getActiveJointModelNames();
-  const moveit::core::JointBoundsVector joint_bounds = joint_model_group->getActiveJointModelsBounds();
   const int num_joints = joint_names.size();
 
   // State variables
@@ -438,7 +449,7 @@ KinematicState Servo::getNextJointState(const ServoInput& command)
     target_joint_velocities = (target_joint_positions - current_joint_positions) / servo_params_.publish_period;
 
     // Scale down the velocity based on joint velocity limit or user defined scaling if applicable.
-    const double joint_limit_scale = jointLimitVelocityScalingFactor(target_joint_velocities, joint_bounds,
+    const double joint_limit_scale = jointLimitVelocityScalingFactor(target_joint_velocities, joint_bounds_,
                                                                      servo_params_.override_velocity_scaling_factor);
     if (joint_limit_scale < 1.0)  // 1.0 means no scaling.
       RCLCPP_WARN_STREAM(LOGGER, "Joint velocity limit scaling applied by a factor of " << joint_limit_scale);
@@ -450,7 +461,7 @@ KinematicState Servo::getNextJointState(const ServoInput& command)
 
     // Check if any joints are going past joint position limits
     const std::vector<int> joints_to_halt =
-        jointsToHalt(target_joint_positions, target_joint_velocities, joint_bounds, servo_params_.joint_limit_margin);
+        jointsToHalt(target_joint_positions, target_joint_velocities, joint_bounds_, servo_params_.joint_limit_margin);
 
     // Apply halting if any joints need to be halted.
     if (!joints_to_halt.empty())
@@ -558,6 +569,53 @@ std::pair<bool, KinematicState> Servo::smoothHalt(KinematicState halt_state)
   }
 
   return std::make_pair(stopped, halt_state);
+}
+
+bool Servo::updateJointLimits(const std::vector<moveit_msgs::msg::JointLimits>& joint_limits)
+{
+  // Verify all requested joints to update exist
+  for (const auto& jl : joint_limits)
+  {
+    auto const it = std::find_if(
+      joint_bounds_.begin(), joint_bounds_.end(),
+      [&, jl](const moveit_msgs::msg::JointLimits & active_joint_bounds)
+          -> bool { return jl.joint_name == active_joint_bounds.joint_name; });
+
+    if (it == joint_bounds_.end())
+    {
+      RCLCPP_ERROR_STREAM(LOGGER, "Joint " << jl.joint_name << " was not found. Not processing request.");
+      return false;
+    }
+  }
+  // Update the limits
+  for (const auto& jl : joint_limits)
+  {
+    for (auto& joint : joint_bounds_)
+    {
+      if (jl.joint_name == joint.joint_name)
+      {
+        if (jl.has_position_limits)
+        {
+          joint.max_position = jl.max_position;
+          joint.min_position = jl.min_position;
+        }
+        if (jl.has_velocity_limits)
+        {
+          joint.max_velocity = jl.max_velocity;
+        }
+        if (jl.has_acceleration_limits)
+        {
+          RCLCPP_WARN_STREAM(LOGGER, "Dynamically updating acceleration limits is not supported");
+        }
+        if (jl.has_jerk_limits)
+        {
+          RCLCPP_WARN_STREAM(LOGGER, "Dynamically updating jerk limits is not supported");
+        }
+        break;
+      }
+    }
+  }
+  return true;
 }
 
 }  // namespace moveit_servo

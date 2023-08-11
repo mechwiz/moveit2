@@ -44,6 +44,7 @@
 #include <control_msgs/msg/joint_jog.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <geometry_msgs/msg/twist_stamped.hpp>
+#include <moveit_msgs/srv/change_joint_limits.hpp>
 #include <moveit_msgs/srv/servo_command_type.hpp>
 #include <moveit_msgs/msg/servo_status.hpp>
 #include <moveit_servo/servo.hpp>
@@ -95,6 +96,12 @@ private:
   void switchCommandType(const std::shared_ptr<moveit_msgs::srv::ServoCommandType::Request>& request,
                          const std::shared_ptr<moveit_msgs::srv::ServoCommandType::Response>& response);
 
+  /**
+   * \brief The service to change joint limits dynamically
+   */
+  void changeJointLimits(const std::shared_ptr<moveit_msgs::srv::ChangeJointLimits::Request>& request,
+                         const std::shared_ptr<moveit_msgs::srv::ChangeJointLimits::Response>& response);
+
   void jointJogCallback(const control_msgs::msg::JointJog::ConstSharedPtr& msg);
   void twistCallback(const geometry_msgs::msg::TwistStamped::ConstSharedPtr& msg);
   void poseCallback(const geometry_msgs::msg::PoseStamped::ConstSharedPtr& msg);
@@ -124,6 +131,7 @@ private:
 
   rclcpp::Service<moveit_msgs::srv::ServoCommandType>::SharedPtr switch_command_type_;
   rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr pause_servo_;
+  rclcpp::Service<moveit_msgs::srv::ChangeJointLimits>::SharedPtr joint_limits_update_server_;
 
   // Used for communication with thread
   std::atomic<bool> stop_servo_;
